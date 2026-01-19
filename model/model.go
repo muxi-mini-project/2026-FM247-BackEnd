@@ -15,7 +15,7 @@ type BaseModel struct {
 
 type User struct {
 	BaseModel
-	UserName     string `json:"username" gorm:"column:username"`
+	Username     string `json:"username" gorm:"column:username"`
 	ProfilePhoto string `json:"profile_photo"` // 头像URL
 	Password     string `json:"-"`
 	Email        string `json:"email"`
