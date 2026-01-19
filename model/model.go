@@ -6,33 +6,62 @@ import (
 	"gorm.io/gorm"
 )
 
+type BaseModel struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
+}
+
 type User struct {
-	ID        uint   `json:"id"`
-	UserName  string `json:"username" gorm:"column:username"`
-	Password  string `json:"-"`
-	Telenum   string `json:"telenum"`
-	Level     string `json:"level"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	BaseModel
+	UserName     string `json:"username" gorm:"column:username"`
+	ProfilePhoto string `json:"profile_photo"` // 头像URL
+	Password     string `json:"-"`
+	Email        string `json:"email"`
+	Telenum      string `json:"telenum"`
+	Level        string `json:"level"`
+	TotalExp     int    `json:"total_exp"` //总经验值
+}
+
+type TotalStudyData struct {
+	BaseModel
+	UserID    uint `json:"user_id"`
+	StudyTime int  `json:"study_time"`
+	Tomatoes  int  `json:"tomatoes"`
+}
+
+type DailyStudyData struct {
+	BaseModel
+	UserID    uint      `json:"user_id"`
+	Date      time.Time `json:"date"`
+	EndAt     time.Time `json:"end_at"`
+	StudyTime int       `json:"study_time"`
+	Tomatoes  int       `json:"tomatoes"`
+}
+
+type MonthlyStudyData struct {
+	BaseModel
+	UserID    uint      `json:"user_id"`
+	Month     time.Time `json:"month"`
+	EndAt     time.Time `json:"end_at"`
+	StudyTime int       `json:"study_time"`
+	Tomatoes  int       `json:"tomatoes"`
 }
 
 type Todo struct {
-	Id          uint      `json:"id"`
+	BaseModel
+	UserID      uint      `json:"user_id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Completed   bool      `json:"completed"`
 	Deadline    time.Time `json:"deadline"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 type Note struct {
-	Id        uint   `json:"id"`
-	Title     string `json:"title"`
-	Content   string `json:"content"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	BaseModel
+	UserID  uint      `json:"user_id"`
+	Title   string    `json:"title"`
+	Date    time.Time `json:"date"`
+	Content string    `json:"content"`
 }
