@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"2026-FM247-BackEnd/model"
+	"2026-FM247-BackEnd/models"
 	"2026-FM247-BackEnd/repository"
 	"2026-FM247-BackEnd/utils"
 )
@@ -12,6 +12,15 @@ import (
 type UserService struct {
 	userRepo  *repository.UserRepository
 	tokenRepo *repository.TokenBlacklistRepository
+}
+
+type IUserService interface {
+	Register(username, password string) error
+	Login(username, password string) (*models.User, error)
+	CancelUser(userID uint, password string) (error, string)
+	UpdateUserPassword(userID uint, oldPassword, newPassword string) string
+	UpdateUserInfo(userID uint, username, telenum string) string
+	GetUserByID(userID uint) (*models.User, error)
 }
 
 func NewUserService(userRepo *repository.UserRepository, tokenRepo *repository.TokenBlacklistRepository) *UserService {
@@ -31,7 +40,7 @@ func (u *UserService) Register(username, password, email string) (err error, mes
 	if err != nil {
 		return errors.New("密码加密失败"), "密码加密失败"
 	}
-	newUser := &model.User{
+	newUser := &models.User{
 		Username: username,
 		Password: hashedPassword,
 		Email:    email,
@@ -139,6 +148,11 @@ func (u *UserService) UpdateUserPassword(userID uint, oldPassword, newPassword s
 		return "更新用户密码失败"
 	}
 	return "更新用户密码成功"
+}
+
+// ID查找用户
+func (s *UserService) GetUserByID(userID uint) (*models.User, error) {
+	return s.userRepo.GetUserByID(userID)
 }
 
 // 待办：更新头像

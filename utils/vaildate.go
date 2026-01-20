@@ -1,0 +1,28 @@
+package utils
+
+func ValidateUsername(username string) bool {
+	// 用户名长度3-20位，只能包含字母、数字、下划线
+	if len(username) < 3 || len(username) > 20 {
+		return false
+	}
+	for _, ch := range username {
+		if !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+			(ch >= '0' && ch <= '9') || ch == '_') {
+			return false
+		}
+	}
+	return true
+}
+
+func ValidatePhoneNumber(phone string) bool {
+	// 简单的手机号验证，可以根据实际情况调整
+	if len(phone) != 11 {
+		return false
+	}
+	for _, ch := range phone {
+		if ch < '0' || ch > '9' {
+			return false
+		}
+	}
+	return phone[0] == '1'
+}

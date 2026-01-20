@@ -1,0 +1,242 @@
+package handler
+
+import (
+	"2026-FM247-BackEnd/models"
+	"2026-FM247-BackEnd/service"
+	"2026-FM247-BackEnd/utils"
+
+	"github.com/gin-gonic/gin"
+)
+
+type RegisterUser struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Telenum  string `json:"telenum"`
+}
+
+type LoginUser struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// AuthResponse 认证响应
+type AuthResponse struct {
+	User  *models.User `json:"user"`
+	Token string       `json:"token"`
+}
+
+type AuthHandler struct {
+	tokenservice *service.TokenBlacklistService
+	userservice  *service.UserService
+}
+
+type UserHandler struct {
+	userservice *service.UserService
+}
+
+type UpdateUserInfo struct {
+	Username string `json:"username"`
+	Telenum  string `json:"telenum"`
+}
+
+type UpdateEmail struct {
+	NewEmail string `json:"new_email"`
+}
+
+type UpdatePassword struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
+type CancelUser struct {
+	Password string `json:"password"`
+}
+
+func NewAuthHandler(tokenservice *service.TokenBlacklistService, userservice *service.UserService) *AuthHandler {
+	return &AuthHandler{
+		tokenservice: tokenservice,
+		userservice:  userservice,
+	}
+}
+
+// RegisterUserHandler 注册新用户
+func (h *AuthHandler) RegisterUserHandler(c *gin.Context) {
+	var req RegisterUser
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		FailWithMessage(c, "请求参数有误")
+		return
+	}
+
+	err, msg := h.userservice.Register(req.Username, req.Password, req.Email)
+	if msg != "" {
+		FailWithMessage(c, msg)
+		return
+	}
+	OkWithMessage(c, "注册成功,请牢记账户和密码")
+}
+
+// LoginHandler 登录
+func (h *AuthHandler) LoginHandler(c *gin.Context) {
+	var req LoginUser
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		FailWithMessage(c, "请求参数有误")
+		return
+	}
+
+	token, msg := h.userservice.Login(req.Email, req.Password)
+	if msg != "" {
+		FailWithMessage(c, msg)
+		return
+	}
+	c.Writer.Header().Set("Authorization", "Bearer "+token)
+
+	OkWithMessage(c, msg)
+}
+
+// LogoutHandler 登出
+func (h *AuthHandler) LogoutHandler(c *gin.Context) {
+	// 方法1：使用GetClaimsFromContext获取完整的claims
+	claims, err := utils.GetClaimsFromContext(c)
+	if err != nil {
+		FailWithMessage(c, "无法获取用户信息: "+err.Error())
+		return
+	}
+
+	err = h.tokenservice.AddToBlacklist(claims.Jti)
+	if err != nil {
+		FailWithMessage(c, "登出失败: "+err.Error())
+		return
+	}
+
+	OkWithMessage(c, "登出成功")
+}
+
+// CancelHandler 注销用户
+func (h *AuthHandler) CancelHandler(c *gin.Context) {
+	var req CancelUser
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		FailWithMessage(c, "请求参数有误: "+err.Error())
+		return
+	}
+
+	// 获取完整的claims
+	claims, err := utils.GetClaimsFromContext(c)
+	if err != nil {
+		FailWithMessage(c, "无法获取用户信息: "+err.Error())
+		return
+	}
+
+	err, msg := h.userservice.CancelUser(claims.UserID, req.Password)
+	if err != nil {
+		FailWithMessage(c, msg)
+		return
+	}
+
+	// 注销成功后，吊销当前令牌
+	_ = h.tokenservice.AddToBlacklist(claims.Jti)
+
+	OkWithMessage(c, "注销成功")
+}
+
+func NewUserHandler(userservice *service.UserService) *UserHandler {
+	return &UserHandler{userservice: userservice}
+}
+
+// UpdatePasswordHandler 修改密码
+func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
+	var req UpdatePassword
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		FailWithMessage(c, "请求参数有误: "+err.Error())
+		return
+	}
+
+	// 使用 GetClaimsFromContext 替代 GetPrincipal
+	claims, err := utils.GetClaimsFromContext(c)
+	if err != nil {
+		FailWithMessage(c, "无法获取用户信息: "+err.Error())
+		return
+	}
+
+	msg := h.userservice.UpdateUserPassword(claims.UserID, req.OldPassword, req.NewPassword)
+	if msg != "" {
+		FailWithMessage(c, msg)
+		return
+	}
+
+	OkWithMessage(c, "密码修改成功")
+}
+
+// UpdateUserInfoHandler 修改用户信息
+func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
+	var req UpdateUserInfo
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		FailWithMessage(c, "请求参数有误: "+err.Error())
+		return
+	}
+
+	// 验证请求参数
+	if req.Username == "" && req.Telenum == "" {
+		FailWithMessage(c, "用户名和电话号码不能同时为空")
+		return
+	}
+
+	// 验证用户名格式
+	if req.Username != "" && !utils.ValidateUsername(req.Username) {
+		FailWithMessage(c, "用户名格式不正确")
+		return
+	}
+
+	// 验证电话号码格式
+	if req.Telenum != "" && !utils.ValidatePhoneNumber(req.Telenum) {
+		FailWithMessage(c, "电话号码格式不正确")
+		return
+	}
+
+	// 使用 GetClaimsFromContext
+	claims, err := utils.GetClaimsFromContext(c)
+	if err != nil {
+		FailWithMessage(c, "无法获取用户信息: "+err.Error())
+		return
+	}
+
+	msg := h.userservice.UpdateUserInfo(claims.UserID, req.Username, req.Telenum)
+	if msg != "" {
+		FailWithMessage(c, msg)
+		return
+	}
+
+	OkWithMessage(c, "用户信息修改成功")
+}
+
+// GetUserInfoHandler 获取当前用户信息
+func (h *UserHandler) GetUserInfoHandler(c *gin.Context) {
+	claims, err := utils.GetClaimsFromContext(c)
+	if err != nil {
+		FailWithMessage(c, "无法获取用户信息: "+err.Error())
+		return
+	}
+
+	// 从数据库获取完整的用户信息
+	user, err := h.userservice.GetUserByID(claims.UserID)
+	if err != nil {
+		FailWithMessage(c, "获取用户信息失败")
+		return
+	}
+
+	// 过滤敏感信息
+	userInfo := gin.H{
+		"id":         user.ID,
+		"username":   user.Username,
+		"telenum":    user.Telenum,
+		"avatar":     user.Avatar,
+		"created_at": user.CreatedAt,
+	}
+
+	OkWithData(c, userInfo)
+}

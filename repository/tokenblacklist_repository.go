@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"2026-FM247-BackEnd/model"
+	"2026-FM247-BackEnd/models"
 	"time"
 
 	"gorm.io/gorm"
@@ -16,7 +16,7 @@ func NewTokenBlacklistRepository(db *gorm.DB) *TokenBlacklistRepository {
 }
 
 func (r *TokenBlacklistRepository) AddToBlacklist(jti string, expiresAt time.Time) error {
-	blacklistEntry := &model.TokenBlacklist{
+	blacklistEntry := &models.TokenBlacklist{
 		Jti:       jti,
 		ExpiresAt: expiresAt,
 	}
@@ -28,7 +28,7 @@ func (r *TokenBlacklistRepository) AddToBlacklist(jti string, expiresAt time.Tim
 }
 
 func (r *TokenBlacklistRepository) IsBlacklisted(jti string) (bool, error) {
-	result := r.db.Where("jti = ?", jti).First(&model.TokenBlacklist{})
+	result := r.db.Where("jti = ?", jti).First(&models.TokenBlacklist{})
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return false, nil

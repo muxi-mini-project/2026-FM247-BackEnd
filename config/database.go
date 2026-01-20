@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"2026-FM247-BackEnd/model"
+	"2026-FM247-BackEnd/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -31,13 +31,13 @@ func ConnectDatabase() error {
 
 	// 自动迁移
 	db.AutoMigrate(
-		&model.User{},
-		&model.TotalStudyData{},
-		&model.DailyStudyData{},
-		&model.MonthlyStudyData{},
-		&model.Todo{},
-		&model.Note{},
-		&model.TokenBlacklist{},
+		&models.User{},
+		&models.TotalStudyData{},
+		&models.DailyStudyData{},
+		&models.MonthlyStudyData{},
+		&models.Todo{},
+		&models.Note{},
+		&models.TokenBlacklist{},
 	)
 	log.Println("Database migrated successfully")
 	return nil
