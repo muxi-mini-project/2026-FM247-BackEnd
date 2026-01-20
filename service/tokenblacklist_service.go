@@ -9,6 +9,11 @@ type TokenBlacklistService struct {
 	blacklistRepo *repository.TokenBlacklistRepository
 }
 
+type ITokenBlacklistService interface {
+	AddToBlacklist(jti string) error
+	IsBlacklisted(jti string) (bool, error)
+}
+
 // 只是封装一下
 func NewTokenBlacklistService(blacklistRepo *repository.TokenBlacklistRepository) *TokenBlacklistService {
 	return &TokenBlacklistService{blacklistRepo: blacklistRepo}
