@@ -70,7 +70,7 @@ func (h *AuthHandler) RegisterUserHandler(c *gin.Context) {
 	}
 
 	err, msg := h.userservice.Register(req.Username, req.Password, req.Email)
-	if msg != "" {
+	if msg != "注册成功" {
 		FailWithMessage(c, msg)
 		return
 	}
@@ -87,7 +87,7 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	}
 
 	token, msg := h.userservice.Login(req.Email, req.Password)
-	if msg != "" {
+	if msg != "登录成功" {
 		FailWithMessage(c, msg)
 		return
 	}
