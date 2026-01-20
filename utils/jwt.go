@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 )
 
 // Claims 结构体定义JWT的声明（payload）部分
@@ -17,6 +18,7 @@ import (
 type Claims struct {
 	UserID   uint   `json:"user_id"`
 	Username string `json:"username"`
+	Jti      string `json:"jti"`
 	jwt.StandardClaims
 }
 
@@ -34,8 +36,9 @@ func GenerateToken(user *model.User) (string, error) {
 
 	// 创建Claims声明对象，包含自定义声明和标准声明
 	claims := &Claims{
-		UserID:   user.ID,       // 设置用户ID
-		Username: user.Username, // 设置用户名
+		UserID:   user.ID,          // 设置用户ID
+		Username: user.Username,    // 设置用户名
+		Jti:      uuid.NewString(), // 设置唯一的JWT ID
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(), // 设置过期时间（Unix时间戳）
 			IssuedAt:  time.Now().Unix(),     // 设置签发时间（Unix时间戳）

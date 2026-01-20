@@ -40,17 +40,17 @@ func (r *UserRepository) GetUserByID(id uint) (*model.User, error) {
 	return &user, nil
 }
 
-func (r *UserRepository) UpdateUserInfo(updateInfo *model.UpdateUserInfo) error {
+func (r *UserRepository) UpdateUserInfo(userID uint, username, telenum string) error {
 	var user *model.User
-	user, err := r.GetUserByID(updateInfo.UserID)
+	user, err := r.GetUserByID(userID)
 	if err != nil {
 		return err
 	}
-	if updateInfo.Username != "" {
-		user.Username = updateInfo.Username
+	if username != "" {
+		user.Username = username
 	}
-	if updateInfo.Telenum != "" {
-		user.Telenum = updateInfo.Telenum
+	if telenum != "" {
+		user.Telenum = telenum
 	}
 
 	result := r.db.Save(user)
@@ -60,13 +60,13 @@ func (r *UserRepository) UpdateUserInfo(updateInfo *model.UpdateUserInfo) error 
 	return nil
 }
 
-func (r *UserRepository) UpdateUserEmail(updateemail *model.UpdateEmail) error {
+func (r *UserRepository) UpdateUserEmail(userid uint, newEmail string) error {
 	var user *model.User
-	user, err := r.GetUserByID(updateemail.UserID)
+	user, err := r.GetUserByID(userid)
 	if err != nil {
 		return err
 	}
-	user.Email = updateemail.NewEmail
+	user.Email = newEmail
 	result := r.db.Save(user)
 	if result.Error != nil {
 		return result.Error
@@ -74,7 +74,8 @@ func (r *UserRepository) UpdateUserEmail(updateemail *model.UpdateEmail) error {
 	return nil
 }
 
-//上传用户头像,待办
+//待办：上传用户头像
+//待办：获取用户信息
 
 func (r *UserRepository) UpdatePassword(userid uint, newpassword string) error {
 	var user *model.User
@@ -84,6 +85,14 @@ func (r *UserRepository) UpdatePassword(userid uint, newpassword string) error {
 	}
 	user.Password = newpassword
 	result := r.db.Save(user)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func (r *UserRepository) DeleteUser(userid uint) error {
+	result := r.db.Delete(&model.User{}, userid)
 	if result.Error != nil {
 		return result.Error
 	}

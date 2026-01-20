@@ -20,7 +20,7 @@ type User struct {
 	Password     string `json:"-"`
 	Email        string `json:"email"`
 	Telenum      string `json:"telenum"`
-	Level        string `json:"level"`
+	Level        int    `json:"level"`
 	TotalExp     int    `json:"total_exp"` //总经验值
 }
 
@@ -64,4 +64,17 @@ type Note struct {
 	Title   string    `json:"title"`
 	Date    time.Time `json:"date"`
 	Content string    `json:"content"`
+}
+
+type TokenBlacklist struct {
+	BaseModel
+	Jti       string    `json:"jti" gorm:"uniqueIndex"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// Principal 用于表示经过身份验证的用户信息
+type Principal struct {
+	UserID   uint
+	Username string
+	Jti      string
 }

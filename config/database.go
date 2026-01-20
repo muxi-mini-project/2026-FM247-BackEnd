@@ -30,7 +30,15 @@ func ConnectDatabase() error {
 	log.Println("Database connection established")
 
 	// 自动迁移
-	db.AutoMigrate(&model.User{}, &model.TotalStudyData{}, &model.DailyStudyData{}, &model.MonthlyStudyData{}, &model.Todo{}, &model.Note{})
+	db.AutoMigrate(
+		&model.User{},
+		&model.TotalStudyData{},
+		&model.DailyStudyData{},
+		&model.MonthlyStudyData{},
+		&model.Todo{},
+		&model.Note{},
+		&model.TokenBlacklist{},
+	)
 	log.Println("Database migrated successfully")
 	return nil
 }
