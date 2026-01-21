@@ -19,6 +19,10 @@ func (r *TodoRepository) CreateTodo(todo *models.Todo) error {
 	if todo.Title == "" {
 		return fmt.Errorf("任务不能为空")
 	}
+	if todo.DDL != nil && todo.DDL.Before(todo.CreatedAt) {
+		return fmt.Errorf("截止日期不能早于创建日期")
+	}
+
 	return r.db.Create(todo).Error
 }
 

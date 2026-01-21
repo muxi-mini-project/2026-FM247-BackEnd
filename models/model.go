@@ -79,6 +79,7 @@ type Todo struct {
 	Status      string     `gorm:"type:varchar(20);default:'未完成'" json:"status"` // pending, in_progress, completed, archived
 	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	StartTime   *time.Time `json:"start_time"`
+	DDL         *time.Time `json:"ddl"`
 	CompletedAt *time.Time `json:"completed_at"`
 	User        User       `gorm:"foreignKey:UserID" json:"-"`
 }
