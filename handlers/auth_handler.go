@@ -13,6 +13,7 @@ type RegisterUser struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Telenum  string `json:"telenum"`
+	Gender   string `json:"gender" binding:"oneof=男 女 草履虫"`
 }
 
 type LoginUser struct {
@@ -38,6 +39,7 @@ type UserHandler struct {
 type UpdateUserInfo struct {
 	Username string `json:"username"`
 	Telenum  string `json:"telenum"`
+	Gender   string `json:"gender" binding:"omitempty,oneof=男 女 草履虫"`
 }
 
 type UpdateEmail struct {
@@ -69,7 +71,7 @@ func (h *AuthHandler) RegisterUserHandler(c *gin.Context) {
 		return
 	}
 
-	err, msg := h.userservice.Register(req.Username, req.Password, req.Email)
+	err, msg := h.userservice.Register(req.Username, req.Password, req.Email, req.Gender)
 	if msg != "注册成功" {
 		FailWithMessage(c, msg)
 		return
@@ -155,7 +157,7 @@ func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
 		return
 	}
 
-	// 使用 GetClaimsFromContext 替代 GetPrincipal
+	// 使用 GetClaimsFromContext
 	claims, err := utils.GetClaimsFromContext(c)
 	if err != nil {
 		FailWithMessage(c, "无法获取用户信息: "+err.Error())
@@ -173,8 +175,16 @@ func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
 
 // UpdateUserInfoHandler 修改用户信息
 func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
+
+	// 使用 GetClaimsFromContext
+	claims, err := utils.GetClaimsFromContext(c)
+	if err != nil {
+		FailWithMessage(c, "无法获取用户信息: "+err.Error())
+		return
+	}
+
 	var req UpdateUserInfo
-	err := c.ShouldBindJSON(&req)
+	err = c.ShouldBindJSON(&req)
 	if err != nil {
 		FailWithMessage(c, "请求参数有误: "+err.Error())
 		return
@@ -198,14 +208,13 @@ func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
 		return
 	}
 
-	// 使用 GetClaimsFromContext
-	claims, err := utils.GetClaimsFromContext(c)
-	if err != nil {
-		FailWithMessage(c, "无法获取用户信息: "+err.Error())
+	// 验证性别
+	if req.Gender != "" && req.Gender != "男" && req.Gender != "女" && req.Gender != "保密" {
+		FailWithMessage(c, "性别参数无效")
 		return
 	}
 
-	msg := h.userservice.UpdateUserInfo(claims.UserID, req.Username, req.Telenum)
+	msg := h.userservice.UpdateUserInfo(claims.UserID, req.Username, req.Telenum, req.Gender)
 	if msg != "" {
 		FailWithMessage(c, msg)
 		return
@@ -229,12 +238,16 @@ func (h *UserHandler) GetUserInfoHandler(c *gin.Context) {
 		return
 	}
 
-	// 过滤敏感信息
+	// 获取需要的信息
 	userInfo := gin.H{
 		"id":         user.ID,
 		"username":   user.Username,
+		"email":      user.Email,
+		"gender":     user.Gender,
 		"telenum":    user.Telenum,
 		"avatar":     user.Avatar,
+		"experience": user.Experience,
+		"level":      user.Level,
 		"created_at": user.CreatedAt,
 	}
 

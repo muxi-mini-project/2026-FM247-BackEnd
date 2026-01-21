@@ -50,17 +50,21 @@ func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *UserRepository) UpdateUserInfo(userID uint, username, telenum string) error {
+func (r *UserRepository) UpdateUserInfo(userID uint, username, telenum, gender string) error {
 	var user *models.User
 	user, err := r.GetUserByID(userID)
 	if err != nil {
 		return err
 	}
-	if username != "" {
+
+	if username != user.Username && username != "" {
 		user.Username = username
 	}
-	if telenum != "" {
+	if telenum != user.Telenum && telenum != "" {
 		user.Telenum = telenum
+	}
+	if gender != user.Gender && gender != "" {
+		user.Gender = gender
 	}
 
 	result := r.db.Save(user)
@@ -85,6 +89,7 @@ func (r *UserRepository) UpdateUserEmail(userid uint, newEmail string) error {
 }
 
 // 待办：上传用户头像
+
 func (r *UserRepository) UpdatePassword(userid uint, newpassword string) error {
 	var user *models.User
 	user, err := r.GetUserByID(userid)
@@ -105,4 +110,12 @@ func (r *UserRepository) DeleteUser(userid uint) error {
 		return result.Error
 	}
 	return nil
+}
+
+// UpdateAvatarURL 更新用户头像URL
+func (r *UserRepository) UpdateAvatarURL(userID uint, avatarURL string) error {
+	return r.db.Model(&models.User{}).
+		Where("id = ?", userID).
+		Update("avatar", avatarURL).
+		Error
 }

@@ -1,16 +1,25 @@
 package service
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
 	"time"
 
+	"2026-FM247-BackEnd/config"
 	"2026-FM247-BackEnd/models"
 	"2026-FM247-BackEnd/repository"
+	"2026-FM247-BackEnd/storage"
 	"2026-FM247-BackEnd/utils"
 )
 
 type UserService struct {
 	userRepo  *repository.UserRepository
+	storage   storage.Storage
 	tokenRepo *repository.TokenBlacklistRepository
 }
 
@@ -23,27 +32,73 @@ type IUserService interface {
 	GetUserByID(userID uint) (*models.User, error)
 }
 
-func NewUserService(userRepo *repository.UserRepository, tokenRepo *repository.TokenBlacklistRepository) *UserService {
-	return &UserService{userRepo: userRepo, tokenRepo: tokenRepo}
+func NewUserService(userRepo *repository.UserRepository, tokenRepo *repository.TokenBlacklistRepository) (*UserService, error) {
+	// 1. 加载OSS配置
+	ossConfig := config.LoadOSSConfig()
+
+	// 2. 创建存储实例
+	var storageImpl storage.Storage
+	var err error
+
+	if ossConfig.IsValid() {
+		storageImpl, err = storage.NewOSSStorage(ossConfig)
+		if err != nil {
+			fmt.Printf("警告：OSS初始化失败，将使用本地存储: %v\n", err)
+			storageImpl = NewSimpleLocalStorage()
+		} else {
+			fmt.Println("已启用OSS存储")
+		}
+	} else {
+		storageImpl = NewSimpleLocalStorage()
+		fmt.Println("已启用本地存储（开发模式）")
+	}
+
+	return &UserService{
+		userRepo:  userRepo,
+		storage:   storageImpl,
+		tokenRepo: tokenRepo,
+	}, nil
+}
+
+type localStorageImpl struct{}
+
+func NewSimpleLocalStorage() storage.Storage {
+	return &localStorageImpl{}
 }
 
 // 注册
-func (u *UserService) Register(username, password, email string) (err error, message string) {
+func (u *UserService) Register(username, password, email, gender string) (err error, message string) {
 	if username == "" || password == "" || email == "" {
 		return errors.New("用户名、密码和邮箱不能为空"), "用户名、密码和邮箱不能为空"
 	}
+
+	if gender != "" && gender != "男" && gender != "女" && gender != "草履虫" {
+		return errors.New("性别参数无效"), "性别参数无效，可选值：男、女、草履虫"
+	}
+
+	// 如果没有传入性别，设置默认值
+	if gender == "" {
+		gender = "草履虫"
+	}
+
 	_, err = u.userRepo.GetUserByEmail(email)
 	if err == nil {
 		return errors.New("用户已存在"), "用户已存在"
 	}
+
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return errors.New("密码加密失败"), "密码加密失败"
 	}
+
+	defaultAvatar := u.getDefaultAvatarURL()
+
 	newUser := &models.User{
 		Username: username,
 		Password: hashedPassword,
 		Email:    email,
+		Gender:   gender,
+		Avatar:   defaultAvatar,
 	}
 	err = u.userRepo.CreateUser(newUser)
 	if err != nil {
@@ -100,11 +155,11 @@ func (u *UserService) CancelUser(userID uint, password string) (err error, messa
 }
 
 // 更新用户信息
-func (u *UserService) UpdateUserInfo(userID uint, username, telenum string) (message string) {
-	if username == "" && telenum == "" {
+func (u *UserService) UpdateUserInfo(userID uint, username, telenum, gender string) (message string) {
+	if username == "" && telenum == "" && gender == "" {
 		return "未修改任何信息"
 	}
-	err := u.userRepo.UpdateUserInfo(userID, username, telenum)
+	err := u.userRepo.UpdateUserInfo(userID, username, telenum, gender)
 	if err != nil {
 		return "更新用户信息失败"
 	}
@@ -155,4 +210,80 @@ func (s *UserService) GetUserByID(userID uint) (*models.User, error) {
 	return s.userRepo.GetUserByID(userID)
 }
 
-// 待办：更新头像
+// 上传头像方法
+func (s *localStorageImpl) UploadAvatar(ctx context.Context, userID uint, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+	// 确保上传目录存在
+	uploadDir := "uploads/avatars"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		return "", err
+	}
+
+	// 生成文件名
+	ext := filepath.Ext(fileHeader.Filename)
+	filename := fmt.Sprintf("%d_%d%s", userID, time.Now().UnixNano(), ext)
+	filePath := filepath.Join(uploadDir, filename)
+
+	// 保存文件
+	dst, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer dst.Close()
+
+	// 复制内容
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		return "", err
+	}
+
+	return "/uploads/avatars/" + filename, nil
+}
+
+func (s *localStorageImpl) DeleteAvatar(ctx context.Context, avatarURL string) error {
+	return nil
+}
+
+// 上传头像方法
+func (s *UserService) UploadAvatar(userID uint, file multipart.File, fileHeader *multipart.FileHeader) (avatarURL string, err error) {
+	// 验证用户是否存在
+	_, err = s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return "", fmt.Errorf("用户不存在: %v", err)
+	}
+
+	// 上传到存储
+	avatarURL, err = s.storage.UploadAvatar(context.Background(), userID, file, fileHeader)
+	if err != nil {
+		return "", fmt.Errorf("上传失败: %v", err)
+	}
+
+	// 更新数据库
+	err = s.UpdateUserAvatar(userID, avatarURL)
+	if err != nil {
+		return "", fmt.Errorf("更新数据库失败: %v", err)
+	}
+
+	return avatarURL, nil
+}
+
+// 更新用户头像URL到数据库
+func (s *UserService) UpdateUserAvatar(userID uint, avatarURL string) error {
+	// 直接调用数据库更新
+	return s.userRepo.UpdateAvatarURL(userID, avatarURL)
+}
+
+func (s *UserService) getDefaultAvatarURL() string {
+	// 使用接口检查而不是具体类型断言
+	_, isLocal := s.storage.(*localStorageImpl)
+
+	if !isLocal {
+		cfg := config.LoadOSSConfig()
+		if cfg.IsValid() {
+			return fmt.Sprintf("https://%s.%s/default-avatar.png",
+				cfg.BucketName, cfg.Endpoint)
+		}
+	}
+
+	// 本地默认头像
+	return "/static/default-avatar.png"
+}
