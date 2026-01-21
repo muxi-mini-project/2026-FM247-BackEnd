@@ -12,7 +12,7 @@ import (
 
 	"2026-FM247-BackEnd/config"
 	"2026-FM247-BackEnd/models"
-	"2026-FM247-BackEnd/repository"
+	"2026-FM247-BackEnd/repositories"
 	"2026-FM247-BackEnd/storage"
 	"2026-FM247-BackEnd/utils"
 )

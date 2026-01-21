@@ -6,13 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type BaseModel struct {
-	ID        uint           `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
-}
-
 type TotalStudyData struct {
 	ID        uint           `json:"id" gorm:"primaryKey"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -58,15 +51,6 @@ type Note struct {
 	Content   string         `json:"content"`
 }
 
-type TokenBlacklist struct {
-	ID        uint           `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
-	Jti       string         `json:"jti" gorm:"uniqueIndex"`
-	ExpiresAt time.Time      `json:"expires_at"`
-}
-
 type User struct {
 	ID         uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	Username   string    `gorm:"type:varchar(50);uniqueIndex;not null" json:"username"`
@@ -86,42 +70,17 @@ type User struct {
 	Settings    string     `gorm:"type:json" json:"settings"` // 用户设置，JSON格式存储
 }
 
-// FocusDaily 番茄钟日数据表 - 对应图片1的"番茄钟日数据"表
-type FocusDaily struct {
-	ID                uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID            uint      `gorm:"not null;index" json:"user_id"`
-	Date              time.Time `gorm:"type:date;not null;index" json:"date"`
-	CompletedSessions int       `gorm:"default:0" json:"completed_sessions"` // 完成番茄钟次数
-	StudyDuration     int       `gorm:"default:0" json:"study_duration"`     // 学习时长（秒）
-	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
-
-	User User `gorm:"foreignKey:UserID" json:"-"`
-}
-
-// FocusMonthly 番茄钟月数据表 - 对应图片1的"番茄钟月数据"表
-type FocusMonthly struct {
-	ID                uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID            uint      `gorm:"not null;index" json:"user_id"`
-	Month             string    `gorm:"type:varchar(7);not null;index" json:"month"` // 格式: 2026-01
-	CompletedSessions int       `gorm:"default:0" json:"completed_sessions"`         // 完成番茄钟次数
-	StudyDuration     int       `gorm:"default:0" json:"study_duration"`             // 学习时长（秒）
-	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
-
-	User User `gorm:"foreignKey:UserID" json:"-"`
-}
-
 // Todo 待办事项表
 type Todo struct {
 	ID          uint       `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID      uint       `gorm:"not null;index" json:"user_id"`
 	Title       string     `gorm:"type:varchar(200);not null" json:"title"`
 	Description string     `gorm:"type:text" json:"description"`
-	Status      string     `gorm:"type:varchar(20);default:'pending'" json:"status"` // pending, in_progress, completed, archived
+	Status      string     `gorm:"type:varchar(20);default:'未完成'" json:"status"` // pending, in_progress, completed, archived
 	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	StartTime   *time.Time `json:"start_time"`
 	CompletedAt *time.Time `json:"completed_at"`
-
-	User User `gorm:"foreignKey:UserID" json:"-"`
+	User        User       `gorm:"foreignKey:UserID" json:"-"`
 }
 
 // Audio 音频表 - 对应图片1的"音频"表
@@ -140,4 +99,13 @@ type UserAudioFavorite struct {
 
 	User  User  `gorm:"foreignKey:UserID" json:"-"`
 	Audio Audio `gorm:"foreignKey:AudioID" json:"-"`
+}
+
+type TokenBlacklist struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
+	Jti       string         `json:"jti" gorm:"uniqueIndex"`
+	ExpiresAt time.Time      `json:"expires_at"`
 }

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"2026-FM247-BackEnd/repository"
+	"2026-FM247-BackEnd/repositories"
 	"time"
 )
 
