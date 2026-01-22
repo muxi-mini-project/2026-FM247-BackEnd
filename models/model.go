@@ -21,9 +21,8 @@ type DailyStudyData struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
-	UserID    uint           `json:"user_id"`
-	Date      time.Time      `json:"date"`
-	EndAt     time.Time      `json:"end_at"`
+	UserID    uint           `json:"user_id" gorm:"uniqueIndex:idx_user_date"` //联合索引,保证每天一条记录
+	Date      time.Time      `json:"date" gorm:"uniqueIndex:idx_user_date"`
 	StudyTime int            `json:"study_time"`
 	Tomatoes  int            `json:"tomatoes"`
 }
@@ -33,9 +32,8 @@ type MonthlyStudyData struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
-	UserID    uint           `json:"user_id"`
-	Month     time.Time      `json:"month"`
-	EndAt     time.Time      `json:"end_at"`
+	UserID    uint           `json:"user_id" gorm:"uniqueIndex:idx_user_month"` //联合索引,保证每月一条记录
+	Month     time.Time      `json:"month" gorm:"uniqueIndex:idx_user_month"`
 	StudyTime int            `json:"study_time"`
 	Tomatoes  int            `json:"tomatoes"`
 }
@@ -110,3 +108,30 @@ type TokenBlacklist struct {
 	Jti       string         `json:"jti" gorm:"uniqueIndex"`
 	ExpiresAt time.Time      `json:"expires_at"`
 }
+
+// 番茄钟实体定义
+// type Tomato struct {
+// 	ID     string `json:"id"`      // 番茄钟ID
+// 	UserID uint   `json:"user_id"` // 用户ID
+
+// 	// 时间配置
+// 	StudyDuration int `json:"study_duration"` // 学习时长（分钟）
+// 	BreakDuration int `json:"break_duration"` // 休息时长（分钟）
+
+// 	// 循环配置
+// 	AutoContinue bool `json:"auto_continue"` // 是否自动继续下一个番茄钟
+// 	TotalCycles  int  `json:"total_cycles"`  // 总循环次数
+// 	CurrentCycle int  `json:"current_cycle"` // 当前循环次数
+
+// 	// 状态信息
+// 	Status       string `json:"status"`        // 当前状态(running, paused, completed)
+// 	Phase        string `json:"phase"`         // 当前阶段(study, break)
+// 	RemainingSec int    `json:"remaining_sec"` // 剩余秒数
+// 	ElapsedSec   int    `json:"elapsed_sec"`   // 已过秒数
+// 	PausedSec    int    `json:"paused_sec"`    // 暂停秒数
+// 	TotalElapsed int    `json:"total_elapsed"` // 总学习分钟:(已过秒数-暂停秒数)/60
+
+// 	// 时间戳
+// 	StartedAt   time.Time  `json:"started_at"`
+// 	CompletedAt *time.Time `json:"completed_at,omitempty"`
+// }
