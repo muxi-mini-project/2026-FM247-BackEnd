@@ -3,6 +3,7 @@ package repository
 import (
 	"2026-FM247-BackEnd/models"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -26,21 +27,38 @@ func (r *TodoRepository) CreateTodo(todo *models.Todo) error {
 	return r.db.Create(todo).Error
 }
 
-func (r *TodoRepository) GetTodosByUserID(userID uint) ([]models.Todo, error) {
-
+func (r *TodoRepository) GetTodosByUserID(userID uint, filters map[string]interface{}) ([]models.Todo, error) {
 	if userID == 0 {
 		return nil, fmt.Errorf("无效的用户ID")
 	}
 
 	var todos []models.Todo
-	err := r.db.Where("user_id = ?", userID).Find(&todos).Error
+	query := r.db.Where("user_id = ?", userID)
+
+	// 应用过滤器
+	if status, ok := filters["status"]; ok {
+		query = query.Where("status = ?", status)
+	}
+
+	if startDate, ok := filters["start_date"]; ok {
+		query = query.Where("DATE(created_at) >= ?", startDate)
+	}
+
+	if endDate, ok := filters["end_date"]; ok {
+		query = query.Where("DATE(created_at) <= ?", endDate)
+	}
+
+	// 排序
+	query = query.Order("created_at DESC")
+
+	err := query.Find(&todos).Error
 	return todos, err
 }
 
 func (r *TodoRepository) GetTodoByID(id uint) (*models.Todo, error) {
 
 	if id == 0 {
-		return nil, fmt.Errorf("无效的图书ID")
+		return nil, fmt.Errorf("无效的ID")
 	}
 
 	var todo models.Todo
@@ -65,4 +83,22 @@ func (r *TodoRepository) DeleteTodo(id uint) error {
 	}
 
 	return r.db.Delete(&models.Todo{}, id).Error
+}
+
+// UpdateTodoStatus 更新待办事项状态
+func (r *TodoRepository) UpdateTodoStatus(id uint, userID uint, status string) error {
+	updates := map[string]interface{}{
+		"status": status,
+	}
+
+	if status == "completed" {
+		now := time.Now()
+		updates["completed_at"] = &now
+	} else if status == "pending" || status == "in_progress" {
+		updates["completed_at"] = nil
+	}
+
+	return r.db.Model(&models.Todo{}).
+		Where("id = ? AND user_id = ?", id, userID).
+		Updates(updates).Error
 }

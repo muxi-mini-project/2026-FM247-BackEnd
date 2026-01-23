@@ -71,14 +71,14 @@ type User struct {
 // Todo 待办事项表
 type Todo struct {
 	ID          uint       `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID      uint       `gorm:"not null;index" json:"user_id"`
-	Title       string     `gorm:"type:varchar(200);not null" json:"title"`
-	Description string     `gorm:"type:text" json:"description"`
-	Status      string     `gorm:"type:varchar(20);default:'未完成'" json:"status"` // pending, in_progress, completed, archived
-	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	StartTime   *time.Time `json:"start_time"`
-	DDL         *time.Time `json:"ddl"`
-	CompletedAt *time.Time `json:"completed_at"`
+	UserID      uint       `gorm:"not null;index" json:"user_id"`                    // 关联用户ID
+	Title       string     `gorm:"type:varchar(255);not null" json:"title"`          // 标题
+	Description string     `gorm:"type:text" json:"description"`                     // 描述
+	Status      string     `gorm:"type:varchar(20);default:'pending'" json:"status"` // 完成状态: pending, in_progress, completed
+	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`                 // 创建时间
+	StartTime   *time.Time `gorm:"index" json:"start_time"`                          // 开始时间（可选）
+	DDL         *time.Time `gorm:"index" json:"deadline"`                            // DDL（截止时间，可选）
+	CompletedAt *time.Time `json:"completed_at"`                                     // 完成时间（可选）
 	User        User       `gorm:"foreignKey:UserID" json:"-"`
 }
 

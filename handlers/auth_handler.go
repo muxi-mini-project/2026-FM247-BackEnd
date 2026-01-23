@@ -63,6 +63,7 @@ func NewAuthHandler(tokenservice *service.TokenBlacklistService, userservice *se
 }
 
 // RegisterUserHandler 注册新用户
+// @Router /api/auth/register [post]
 func (h *AuthHandler) RegisterUserHandler(c *gin.Context) {
 	var req RegisterUser
 	err := c.ShouldBindJSON(&req)
@@ -80,6 +81,7 @@ func (h *AuthHandler) RegisterUserHandler(c *gin.Context) {
 }
 
 // LoginHandler 登录
+// @Router /api/auth/login [post]
 func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	var req LoginUser
 	err := c.ShouldBindJSON(&req)
@@ -99,6 +101,7 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 }
 
 // LogoutHandler 登出
+// @Router /api/auth/logout [post]
 func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 	// 方法1：使用GetClaimsFromContext获取完整的claims
 	claims, err := utils.GetClaimsFromContext(c)
@@ -117,6 +120,7 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 }
 
 // CancelHandler 注销用户
+// @Router /api/auth/cancel [post]
 func (h *AuthHandler) CancelHandler(c *gin.Context) {
 	var req CancelUser
 	err := c.ShouldBindJSON(&req)
@@ -149,6 +153,7 @@ func NewUserHandler(userservice *service.UserService) *UserHandler {
 }
 
 // UpdatePasswordHandler 修改密码
+// @Router /api/user/update_password [post]
 func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
 	var req UpdatePassword
 	err := c.ShouldBindJSON(&req)
@@ -174,6 +179,7 @@ func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
 }
 
 // UpdateUserInfoHandler 修改用户信息
+// @Router /api/user/update_info [post]
 func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
 
 	// 使用 GetClaimsFromContext
@@ -224,6 +230,7 @@ func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
 }
 
 // GetUserInfoHandler 获取当前用户信息
+// @Router /api/user/info [get]
 func (h *UserHandler) GetUserInfoHandler(c *gin.Context) {
 	claims, err := utils.GetClaimsFromContext(c)
 	if err != nil {

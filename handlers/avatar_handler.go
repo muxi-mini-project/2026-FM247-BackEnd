@@ -3,7 +3,6 @@ package handler
 import (
 	"2026-FM247-BackEnd/service"
 	"2026-FM247-BackEnd/utils"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,11 +49,5 @@ func (h *AvatarHandler) UploadAvatar(c *gin.Context) {
 	}
 
 	// 5. 返回结果
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"msg":  "上传成功",
-		"data": gin.H{
-			"avatar_url": avatarURL,
-		},
-	})
+	OkWithData(c, gin.H{"avatar_url": avatarURL})
 }
