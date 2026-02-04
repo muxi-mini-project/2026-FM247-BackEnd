@@ -28,6 +28,7 @@ type IUserService interface {
 	Login(username, password string) (*models.User, error)
 	CancelUser(userID uint, password string) (error, string)
 	UpdateUserPassword(userID uint, oldPassword, newPassword string) string
+	UpdateUserEmail(userid uint, newEmail string) (message string)
 	UpdateUserInfo(userID uint, username, telenum string) string
 	GetUserByID(userID uint) (*models.User, error)
 }
@@ -72,13 +73,8 @@ func (u *UserService) Register(username, password, email, gender string) (err er
 		return errors.New("用户名、密码和邮箱不能为空"), "用户名、密码和邮箱不能为空"
 	}
 
-	if gender != "" && gender != "男" && gender != "女" && gender != "草履虫" {
-		return errors.New("性别参数无效"), "性别参数无效，可选值：男、女、草履虫"
-	}
-
-	// 如果没有传入性别，设置默认值
-	if gender == "" {
-		gender = "草履虫"
+	if username != "" && !utils.ValidateUsername(username) {
+		return errors.New("用户名格式不正确"), "用户名格式不正确, 只能包含汉字、字母、数字、下划线，长度为2到20个字符"
 	}
 
 	_, err = u.userRepo.GetUserByEmail(email)
@@ -167,12 +163,21 @@ func (u *UserService) UpdateUserInfo(userID uint, username, telenum, gender stri
 }
 
 // 更新用户邮箱
-func (u *UserService) UpdateUserEmail(userid uint, newEmail string) (message string) {
+func (u *UserService) UpdateUserEmail(userID uint, newEmail string, password string) (message string) {
 	_, err := u.userRepo.GetUserByEmail(newEmail)
 	if err == nil {
 		return "该邮箱已被使用"
 	}
-	err = u.userRepo.UpdateUserEmail(userid, newEmail)
+
+	user, err := u.userRepo.GetUserByID(userID)
+	if err != nil {
+		return "用户不存在"
+	}
+
+	if !utils.CheckPasswordHash(password, user.Password) {
+		return "密码错误"
+	}
+	err = u.userRepo.UpdateUserEmail(userID, newEmail)
 	if err != nil {
 		return "更新用户邮箱失败"
 	}

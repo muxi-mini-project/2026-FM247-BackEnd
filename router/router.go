@@ -26,7 +26,7 @@ func RegisterRoutes(
 		authGroup.POST("/auth/logout", authhandler.LogoutHandler)
 		authGroup.POST("/auth/cancel", authhandler.CancelHandler)
 		authGroup.POST("/user/update_info", userhandler.UpdateUserInfoHandler)
-		authGroup.POST("/user/update_password", userhandler.UpdatePasswordHandler)
+		authGroup.POST("/user/update_email", userhandler.UpdateEmailHandler)
 		authGroup.GET("/user/info", userhandler.GetUserInfoHandler)
 	}
 }

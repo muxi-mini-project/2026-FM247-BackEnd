@@ -43,6 +43,7 @@ type UpdateUserInfo struct {
 
 type UpdateEmail struct {
 	NewEmail string `json:"new_email"`
+	Password string `json:"password"`
 }
 
 type UpdatePassword struct {
@@ -68,11 +69,6 @@ func (h *AuthHandler) RegisterUserHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		FailWithMessage(c, "请求参数有误")
-		return
-	}
-
-	if req.Username != "" && !utils.ValidateUsername(req.Username) {
-		FailWithMessage(c, "用户名格式不正确")
 		return
 	}
 
@@ -182,6 +178,32 @@ func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
 	OkWithMessage(c, "密码修改成功")
 }
 
+// UpdateEmailHandler 修改邮箱
+// @Router /api/user/update_email [post]
+func (h *UserHandler) UpdateEmailHandler(c *gin.Context) {
+	var req UpdateEmail
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		FailWithMessage(c, "请求参数有误: "+err.Error())
+		return
+	}
+
+	// 使用 GetClaimsFromContext
+	claims, err := utils.GetClaimsFromContext(c)
+	if err != nil {
+		FailWithMessage(c, "无法获取用户信息: "+err.Error())
+		return
+	}
+
+	msg := h.userservice.UpdateUserEmail(claims.UserID, req.NewEmail, req.Password)
+	if msg != "" {
+		FailWithMessage(c, msg)
+		return
+	}
+
+	OkWithMessage(c, "密码修改成功")
+}
+
 // UpdateUserInfoHandler 修改用户信息
 // @Router /api/user/update_info [post]
 func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
@@ -201,8 +223,8 @@ func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
 	}
 
 	// 验证请求参数
-	if req.Username == "" && req.Telenum == "" {
-		FailWithMessage(c, "用户名和电话号码不能同时为空")
+	if req.Username == "" && req.Telenum == "" && req.Gender == "" {
+		FailWithMessage(c, "未修改任何信息")
 		return
 	}
 	//验证用户名格式
@@ -217,19 +239,13 @@ func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
 		return
 	}
 
-	// 验证性别
-	if req.Gender != "" && req.Gender != "男" && req.Gender != "女" && req.Gender != "保密" {
-		FailWithMessage(c, "性别参数无效")
-		return
-	}
-
 	msg := h.userservice.UpdateUserInfo(claims.UserID, req.Username, req.Telenum, req.Gender)
-	if msg != "" {
+	if msg != "更新用户信息成功" {
 		FailWithMessage(c, msg)
 		return
 	}
 
-	OkWithMessage(c, "用户信息修改成功")
+	OkWithMessage(c, msg)
 }
 
 // GetUserInfoHandler 获取当前用户信息
