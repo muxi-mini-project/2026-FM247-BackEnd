@@ -51,9 +51,9 @@ type Note struct {
 
 type User struct {
 	ID         uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	Username   string    `gorm:"type:varchar(50);uniqueIndex;not null" json:"username"`
+	Username   string    `gorm:"type:varchar(50);not null" json:"username"`
 	Email      string    `gorm:"type:varchar(100);uniqueIndex" json:"email"`
-	Telenum    string    `gorm:"type:varchar(20);uniqueIndex" json:"phone"`
+	Telenum    string    `gorm:"type:varchar(20)" json:"phone"`
 	Password   string    `gorm:"type:varchar(255);not null" json:"-"` // 密码哈希，不返回给前端
 	Gender     string    `gorm:"type:varchar(10);default:'草履虫'" json:"gender"`
 	Experience int       `gorm:"default:0" json:"experience"` // 经验值

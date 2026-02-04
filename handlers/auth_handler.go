@@ -12,7 +12,6 @@ type RegisterUser struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Gender   string `json:"gender" binding:"oneof=男 女 草履虫"`
 }
 
 type LoginUser struct {
@@ -72,7 +71,7 @@ func (h *AuthHandler) RegisterUserHandler(c *gin.Context) {
 		return
 	}
 
-	err, msg := h.Userservice.Register(req.Username, req.Password, req.Email, req.Gender)
+	err, msg := h.Userservice.Register(req.Username, req.Password, req.Email)
 	if msg != "注册成功" {
 		FailWithMessage(c, msg)
 		return

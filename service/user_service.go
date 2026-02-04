@@ -24,7 +24,7 @@ type UserService struct {
 }
 
 type IUserService interface {
-	Register(username, password string) error
+	Register(username, password, email string) (err error, message string)
 	Login(username, password string) (*models.User, error)
 	CancelUser(userID uint, password string) (error, string)
 	UpdateUserPassword(userID uint, oldPassword, newPassword string) string
@@ -68,7 +68,7 @@ func NewSimpleLocalStorage() storage.Storage {
 }
 
 // 注册
-func (u *UserService) Register(username, password, email, gender string) (err error, message string) {
+func (u *UserService) Register(username, password, email string) (err error, message string) {
 	if username == "" || password == "" || email == "" {
 		return errors.New("用户名、密码和邮箱不能为空"), "用户名、密码和邮箱不能为空"
 	}
@@ -93,7 +93,7 @@ func (u *UserService) Register(username, password, email, gender string) (err er
 		Username: username,
 		Password: hashedPassword,
 		Email:    email,
-		Gender:   gender,
+		Gender:   "草履虫",
 		Avatar:   defaultAvatar,
 	}
 	err = u.userRepo.CreateUser(newUser)
