@@ -12,7 +12,7 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDatabase() error {
+func ConnectDatabase() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		AppConfig.DBUser,
 		AppConfig.DBPassword,
@@ -23,7 +23,7 @@ func ConnectDatabase() error {
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	DB = db
@@ -40,5 +40,16 @@ func ConnectDatabase() error {
 		&models.TokenBlacklist{},
 	)
 	log.Println("Database migrated successfully")
+	return db, nil
+}
+
+func CloseDatabase(db *gorm.DB) error {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	if err := sqlDB.Close(); err != nil {
+		return err
+	}
 	return nil
 }

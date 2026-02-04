@@ -65,7 +65,7 @@ type User struct {
 	// 扩展字段（根据需求添加）
 	LastLoginAt *time.Time `json:"last_login_at"`
 	IsActive    bool       `gorm:"default:true" json:"is_active"`
-	Settings    string     `gorm:"type:json" json:"settings"` // 用户设置，JSON格式存储
+	// Settings    string     `gorm:"type:json" json:"settings"` // 用户设置，JSON格式存储
 }
 
 // Todo 待办事项表
@@ -105,7 +105,7 @@ type TokenBlacklist struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
-	Jti       string         `json:"jti" gorm:"uniqueIndex"`
+	Jti       string         `json:"jti" gorm:"type:varchar(255);uniqueIndex"`
 	ExpiresAt time.Time      `json:"expires_at"`
 }
 

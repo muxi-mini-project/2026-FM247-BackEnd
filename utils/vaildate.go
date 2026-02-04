@@ -1,13 +1,15 @@
 package utils
 
+import "unicode"
+
 func ValidateUsername(username string) bool {
-	// 用户名长度3-20位，只能包含字母、数字、下划线
-	if len(username) < 3 || len(username) > 20 {
+	// 用户名长度2-20位，只能包含汉字、字母、数字、下划线
+	if len(username) < 2 || len(username) > 20 {
 		return false
 	}
 	for _, ch := range username {
 		if !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
-			(ch >= '0' && ch <= '9') || ch == '_') {
+			(ch >= '0' && ch <= '9') || ch == '_' || unicode.Is(unicode.Han, ch)) {
 			return false
 		}
 	}

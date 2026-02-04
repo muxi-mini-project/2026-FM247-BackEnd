@@ -12,7 +12,6 @@ type RegisterUser struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Telenum  string `json:"telenum"`
 	Gender   string `json:"gender" binding:"oneof=男 女 草履虫"`
 }
 
@@ -28,8 +27,8 @@ type AuthResponse struct {
 }
 
 type AuthHandler struct {
-	tokenservice *service.TokenBlacklistService
-	userservice  *service.UserService
+	Tokenservice *service.TokenBlacklistService
+	Userservice  *service.UserService
 }
 
 type UserHandler struct {
@@ -57,8 +56,8 @@ type CancelUser struct {
 
 func NewAuthHandler(tokenservice *service.TokenBlacklistService, userservice *service.UserService) *AuthHandler {
 	return &AuthHandler{
-		tokenservice: tokenservice,
-		userservice:  userservice,
+		Tokenservice: tokenservice,
+		Userservice:  userservice,
 	}
 }
 
@@ -72,7 +71,12 @@ func (h *AuthHandler) RegisterUserHandler(c *gin.Context) {
 		return
 	}
 
-	err, msg := h.userservice.Register(req.Username, req.Password, req.Email, req.Gender)
+	if req.Username != "" && !utils.ValidateUsername(req.Username) {
+		FailWithMessage(c, "用户名格式不正确")
+		return
+	}
+
+	err, msg := h.Userservice.Register(req.Username, req.Password, req.Email, req.Gender)
 	if msg != "注册成功" {
 		FailWithMessage(c, msg)
 		return
@@ -90,7 +94,7 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 		return
 	}
 
-	token, msg := h.userservice.Login(req.Email, req.Password)
+	token, msg := h.Userservice.Login(req.Email, req.Password)
 	if msg != "登录成功" {
 		FailWithMessage(c, msg)
 		return
@@ -110,7 +114,7 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 		return
 	}
 
-	err = h.tokenservice.AddToBlacklist(claims.Jti)
+	err = h.Tokenservice.AddToBlacklist(claims.Jti)
 	if err != nil {
 		FailWithMessage(c, "登出失败: "+err.Error())
 		return
@@ -136,14 +140,14 @@ func (h *AuthHandler) CancelHandler(c *gin.Context) {
 		return
 	}
 
-	err, msg := h.userservice.CancelUser(claims.UserID, req.Password)
+	err, msg := h.Userservice.CancelUser(claims.UserID, req.Password)
 	if err != nil {
 		FailWithMessage(c, msg)
 		return
 	}
 
 	// 注销成功后，吊销当前令牌
-	_ = h.tokenservice.AddToBlacklist(claims.Jti)
+	_ = h.Tokenservice.AddToBlacklist(claims.Jti)
 
 	OkWithMessage(c, "注销成功")
 }
@@ -201,8 +205,7 @@ func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
 		FailWithMessage(c, "用户名和电话号码不能同时为空")
 		return
 	}
-
-	// 验证用户名格式
+	//验证用户名格式
 	if req.Username != "" && !utils.ValidateUsername(req.Username) {
 		FailWithMessage(c, "用户名格式不正确")
 		return
