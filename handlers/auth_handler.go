@@ -1,60 +1,34 @@
 package handler
 
 import (
-	"2026-FM247-BackEnd/models"
 	"2026-FM247-BackEnd/service"
 	"2026-FM247-BackEnd/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-type RegisterUser struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type UserService interface {
+	Register(username, password, email string) (err error, message string)
+	Login(email, password string) (token string, message string)
+	Logout(jti string) (err error, message string)
+	CancelUser(userID uint, password string) (err error, message string)
+	UpdateUserPassword(userID uint, oldPassword, newPassword string) (message string)
+	UpdateUserEmail(userID uint, newEmail string, password string) (message string)
+	UpdateUserInfo(userID uint, username, telenum, gender string) (message string)
+	GetUserInfo(userID uint) (*service.UserInfo, error)
 }
 
-type LoginUser struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-// AuthResponse 认证响应
-type AuthResponse struct {
-	User  *models.User `json:"user"`
-	Token string       `json:"token"`
+type TokenService interface {
+	AddToBlacklist(jti string) error
+	IsBlacklisted(jti string) (bool, error)
 }
 
 type AuthHandler struct {
-	Tokenservice *service.TokenBlacklistService
-	Userservice  *service.UserService
+	Tokenservice TokenService
+	Userservice  UserService
 }
 
-type UserHandler struct {
-	userservice *service.UserService
-}
-
-type UpdateUserInfo struct {
-	Username string `json:"username"`
-	Telenum  string `json:"telenum"`
-	Gender   string `json:"gender" binding:"omitempty,oneof=男 女 草履虫"`
-}
-
-type UpdateEmail struct {
-	NewEmail string `json:"new_email"`
-	Password string `json:"password"`
-}
-
-type UpdatePassword struct {
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
-}
-
-type CancelUser struct {
-	Password string `json:"password"`
-}
-
-func NewAuthHandler(tokenservice *service.TokenBlacklistService, userservice *service.UserService) *AuthHandler {
+func NewAuthHandler(tokenservice TokenService, userservice UserService) *AuthHandler {
 	return &AuthHandler{
 		Tokenservice: tokenservice,
 		Userservice:  userservice,
@@ -96,7 +70,10 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	}
 	c.Writer.Header().Set("Authorization", "Bearer "+token)
 
-	OkWithMessage(c, msg)
+	Ok(c, msg, gin.H{
+		"Authorization": "Bearer " + token,
+	})
+
 }
 
 // LogoutHandler 登出
@@ -147,13 +124,9 @@ func (h *AuthHandler) CancelHandler(c *gin.Context) {
 	OkWithMessage(c, "注销成功")
 }
 
-func NewUserHandler(userservice *service.UserService) *UserHandler {
-	return &UserHandler{userservice: userservice}
-}
-
 // UpdatePasswordHandler 修改密码
 // @Router /api/user/update_password [post]
-func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
+func (h *AuthHandler) UpdatePasswordHandler(c *gin.Context) {
 	var req UpdatePassword
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
@@ -168,7 +141,7 @@ func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
 		return
 	}
 
-	msg := h.userservice.UpdateUserPassword(claims.UserID, req.OldPassword, req.NewPassword)
+	msg := h.Userservice.UpdateUserPassword(claims.UserID, req.OldPassword, req.NewPassword)
 	if msg != "" {
 		FailWithMessage(c, msg)
 		return
@@ -179,7 +152,7 @@ func (h *UserHandler) UpdatePasswordHandler(c *gin.Context) {
 
 // UpdateEmailHandler 修改邮箱
 // @Router /api/user/update_email [post]
-func (h *UserHandler) UpdateEmailHandler(c *gin.Context) {
+func (h *AuthHandler) UpdateEmailHandler(c *gin.Context) {
 	var req UpdateEmail
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
@@ -194,7 +167,7 @@ func (h *UserHandler) UpdateEmailHandler(c *gin.Context) {
 		return
 	}
 
-	msg := h.userservice.UpdateUserEmail(claims.UserID, req.NewEmail, req.Password)
+	msg := h.Userservice.UpdateUserEmail(claims.UserID, req.NewEmail, req.Password)
 	if msg != "" {
 		FailWithMessage(c, msg)
 		return
@@ -205,7 +178,7 @@ func (h *UserHandler) UpdateEmailHandler(c *gin.Context) {
 
 // UpdateUserInfoHandler 修改用户信息
 // @Router /api/user/update_info [post]
-func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
+func (h *AuthHandler) UpdateUserInfoHandler(c *gin.Context) {
 
 	// 使用 GetClaimsFromContext
 	claims, err := utils.GetClaimsFromContext(c)
@@ -238,7 +211,7 @@ func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
 		return
 	}
 
-	msg := h.userservice.UpdateUserInfo(claims.UserID, req.Username, req.Telenum, req.Gender)
+	msg := h.Userservice.UpdateUserInfo(claims.UserID, req.Username, req.Telenum, req.Gender)
 	if msg != "更新用户信息成功" {
 		FailWithMessage(c, msg)
 		return
@@ -249,7 +222,7 @@ func (h *UserHandler) UpdateUserInfoHandler(c *gin.Context) {
 
 // GetUserInfoHandler 获取当前用户信息
 // @Router /api/user/info [get]
-func (h *UserHandler) GetUserInfoHandler(c *gin.Context) {
+func (h *AuthHandler) GetUserInfoHandler(c *gin.Context) {
 	claims, err := utils.GetClaimsFromContext(c)
 	if err != nil {
 		FailWithMessage(c, "无法获取用户信息: "+err.Error())
@@ -257,24 +230,11 @@ func (h *UserHandler) GetUserInfoHandler(c *gin.Context) {
 	}
 
 	// 从数据库获取完整的用户信息
-	user, err := h.userservice.GetUserByID(claims.UserID)
+	userinfo, err := h.Userservice.GetUserInfo(claims.UserID)
 	if err != nil {
 		FailWithMessage(c, "获取用户信息失败")
 		return
 	}
 
-	// 获取需要的信息
-	userInfo := gin.H{
-		"id":         user.ID,
-		"username":   user.Username,
-		"email":      user.Email,
-		"gender":     user.Gender,
-		"telenum":    user.Telenum,
-		"avatar":     user.Avatar,
-		"experience": user.Experience,
-		"level":      user.Level,
-		"created_at": user.CreatedAt,
-	}
-
-	OkWithData(c, userInfo)
+	OkWithData(c, userinfo)
 }

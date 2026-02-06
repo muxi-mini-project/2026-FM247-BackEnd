@@ -37,7 +37,6 @@ func main() {
 
 	//handler层初始化
 	authhandler := handler.NewAuthHandler(tokenService, userService)
-	userhandler := handler.NewUserHandler(userService)
 
 	// 启动服务器
 	r := gin.Default()
@@ -61,7 +60,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	router.RegisterRoutes(r, authhandler, userhandler)
+	router.RegisterRoutes(r, authhandler)
 
 	port := ":" + config.AppConfig.ServerPort
 	fmt.Printf("服务器正在运行，监听端口 %s\n", port)

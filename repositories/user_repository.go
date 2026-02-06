@@ -10,16 +10,6 @@ type UserRepository struct {
 	db *gorm.DB
 }
 
-type IUserRepository interface {
-	CreateUser(user *models.User) error
-	GetUserByEmail(email string) (*models.User, error)
-	GetUserByID(id uint) (*models.User, error)
-	UpdateUserInfo(userID uint, username, telenum string) error
-	UpdateUserEmail(userid uint, newEmail string) error
-	UpdatePassword(userid uint, newpassword string) error
-	DeleteUser(userid uint) error
-}
-
 func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
@@ -87,8 +77,6 @@ func (r *UserRepository) UpdateUserEmail(userid uint, newEmail string) error {
 	}
 	return nil
 }
-
-// 待办：上传用户头像
 
 func (r *UserRepository) UpdatePassword(userid uint, newpassword string) error {
 	var user *models.User

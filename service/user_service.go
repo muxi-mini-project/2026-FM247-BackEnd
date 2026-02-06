@@ -12,28 +12,28 @@ import (
 
 	"2026-FM247-BackEnd/config"
 	"2026-FM247-BackEnd/models"
-	repository "2026-FM247-BackEnd/repositories"
 	"2026-FM247-BackEnd/storage"
 	"2026-FM247-BackEnd/utils"
 )
 
+type UserRepository interface {
+	CreateUser(user *models.User) error
+	GetUserByEmail(email string) (*models.User, error)
+	GetUserByID(id uint) (*models.User, error)
+	UpdateUserInfo(userID uint, username, telenum, gender string) error
+	UpdateUserEmail(userid uint, newEmail string) error
+	UpdatePassword(userid uint, newpassword string) error
+	DeleteUser(userid uint) error
+	UpdateAvatarURL(userID uint, avatarURL string) error
+}
+
 type UserService struct {
-	userRepo  *repository.UserRepository
+	userRepo  UserRepository
 	storage   storage.Storage
-	tokenRepo *repository.TokenBlacklistRepository
+	tokenRepo TokenBlacklistRepository
 }
 
-type IUserService interface {
-	Register(username, password, email string) (err error, message string)
-	Login(username, password string) (*models.User, error)
-	CancelUser(userID uint, password string) (error, string)
-	UpdateUserPassword(userID uint, oldPassword, newPassword string) string
-	UpdateUserEmail(userid uint, newEmail string) (message string)
-	UpdateUserInfo(userID uint, username, telenum string) string
-	GetUserByID(userID uint) (*models.User, error)
-}
-
-func NewUserService(userRepo *repository.UserRepository, tokenRepo *repository.TokenBlacklistRepository) *UserService {
+func NewUserService(userRepo UserRepository, tokenRepo TokenBlacklistRepository) *UserService {
 	// 1. 加载OSS配置
 	ossConfig := config.LoadOSSConfig()
 
@@ -210,9 +210,24 @@ func (u *UserService) UpdateUserPassword(userID uint, oldPassword, newPassword s
 	return "更新用户密码成功"
 }
 
-// ID查找用户
-func (s *UserService) GetUserByID(userID uint) (*models.User, error) {
-	return s.userRepo.GetUserByID(userID)
+// ID获取用户信息
+func (s *UserService) GetUserInfo(userID uint) (*UserInfo, error) {
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	userInfo := &UserInfo{
+		ID:         user.ID,
+		Username:   user.Username,
+		Email:      user.Email,
+		Gender:     user.Gender,
+		Telenum:    user.Telenum,
+		Avatar:     user.Avatar,
+		Experience: user.Experience,
+		Level:      user.Level,
+		CreatedAt:  user.CreatedAt,
+	}
+	return userInfo, nil
 }
 
 // 上传头像方法

@@ -11,11 +11,6 @@ type TokenBlacklistRepository struct {
 	db *gorm.DB
 }
 
-type ITokenBlacklistRepository interface {
-	AddToBlacklist(jti string, expiresAt time.Time) error
-	IsBlacklisted(jti string) (bool, error)
-}
-
 func NewTokenBlacklistRepository(db *gorm.DB) *TokenBlacklistRepository {
 	return &TokenBlacklistRepository{db: db}
 }

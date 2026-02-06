@@ -10,7 +10,6 @@ import (
 func RegisterRoutes(
 	r *gin.Engine,
 	authhandler *handler.AuthHandler,
-	userhandler *handler.UserHandler,
 ) {
 	publicGroup := r.Group("/api")
 	{
@@ -25,9 +24,9 @@ func RegisterRoutes(
 		// 用户相关
 		authGroup.POST("/auth/logout", authhandler.LogoutHandler)
 		authGroup.POST("/auth/cancel", authhandler.CancelHandler)
-		authGroup.POST("/user/update_info", userhandler.UpdateUserInfoHandler)
-		authGroup.POST("/user/update_email", userhandler.UpdateEmailHandler)
-		authGroup.POST("/user/update_password", userhandler.UpdatePasswordHandler)
-		authGroup.GET("/user/info", userhandler.GetUserInfoHandler)
+		authGroup.POST("/user/update_info", authhandler.UpdateUserInfoHandler)
+		authGroup.POST("/user/update_email", authhandler.UpdateEmailHandler)
+		authGroup.POST("/user/update_password", authhandler.UpdatePasswordHandler)
+		authGroup.GET("/user/info", authhandler.GetUserInfoHandler)
 	}
 }

@@ -1,15 +1,14 @@
 package middleware
 
 import (
-	"2026-FM247-BackEnd/handlers"
-	"2026-FM247-BackEnd/service"
+	handler "2026-FM247-BackEnd/handlers"
 	"2026-FM247-BackEnd/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(tokenblacklistservice *service.TokenBlacklistService) gin.HandlerFunc {
+func AuthMiddleware(tokenblacklistservice handler.TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从请求头中获取Authorization字段
 		authHeader := c.GetHeader("Authorization")
@@ -19,7 +18,7 @@ func AuthMiddleware(tokenblacklistservice *service.TokenBlacklistService) gin.Ha
 			return
 		}
 
-		token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
+		token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 
 		claims, err := utils.ValidateToken(token)
 		if err != nil {

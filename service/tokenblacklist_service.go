@@ -1,21 +1,20 @@
 package service
 
 import (
-	"2026-FM247-BackEnd/repositories"
 	"time"
 )
 
-type TokenBlacklistService struct {
-	blacklistRepo *repository.TokenBlacklistRepository
-}
-
-type ITokenBlacklistService interface {
-	AddToBlacklist(jti string) error
+type TokenBlacklistRepository interface {
+	AddToBlacklist(jti string, expiresAt time.Time) error
 	IsBlacklisted(jti string) (bool, error)
 }
 
+type TokenBlacklistService struct {
+	blacklistRepo TokenBlacklistRepository
+}
+
 // 只是封装一下
-func NewTokenBlacklistService(blacklistRepo *repository.TokenBlacklistRepository) *TokenBlacklistService {
+func NewTokenBlacklistService(blacklistRepo TokenBlacklistRepository) *TokenBlacklistService {
 	return &TokenBlacklistService{blacklistRepo: blacklistRepo}
 }
 
