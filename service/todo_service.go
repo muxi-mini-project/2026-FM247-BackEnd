@@ -2,135 +2,142 @@ package service
 
 import (
 	"2026-FM247-BackEnd/models"
-	"2026-FM247-BackEnd/repositories"
-	"errors"
 	"time"
 )
 
-type ITodoService interface {
+type TodoRepository interface {
 	CreateTodo(todo *models.Todo) error
 	GetTodosByUserID(userID uint) ([]models.Todo, error)
 	GetTodoByID(id uint) (*models.Todo, error)
 	UpdateTodo(todo *models.Todo) error
 	DeleteTodo(id uint) error
-}
-
-type CreateTodoRequest struct {
-	Title       string     `json:"title" binding:"required"`
-	Description string     `json:"description"`
-	StartTime   *time.Time `json:"start_time"`
-	Deadline    *time.Time `json:"deadline" binding:"required"` // DDL为必填
-}
-
-// UpdateTodoRequest 更新待办事项请求
-type UpdateTodoRequest struct {
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Status      string     `json:"status" binding:"oneof=pending in_progress completed"`
-	StartTime   *time.Time `json:"start_time"`
-	Deadline    *time.Time `json:"deadline"`
-}
-
-// TodoResponse 待办事项响应
-type TodoResponse struct {
-	ID          uint       `json:"id"`
-	UserID      uint       `json:"user_id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Status      string     `json:"status"`
-	CreatedAt   time.Time  `json:"created_at"`
-	StartTime   *time.Time `json:"start_time"`
-	Deadline    *time.Time `json:"deadline"`
-	CompletedAt *time.Time `json:"completed_at"`
+	UpdateTodoStatus(id uint, userID uint, status string) error
 }
 
 type TodoService struct {
-	todoRepository *repository.TodoRepository
+	todoRepository TodoRepository
 }
 
-func NewTodoService(todoRepository *repository.TodoRepository) *TodoService {
+func NewTodoService(todoRepository TodoRepository) *TodoService {
 	return &TodoService{todoRepository: todoRepository}
 }
 
 // CreateTodo 创建待办事项
-func (s *TodoService) CreateTodo(userID uint, req CreateTodoRequest) (*models.Todo, error) {
+func (s *TodoService) CreateTodo(userID uint, title string, description string, startTime *time.Time, deadline *time.Time) string {
 	// 验证DDL时间
-	if req.Deadline != nil && req.Deadline.Before(time.Now()) {
-		return nil, errors.New("截止时间不能早于当前时间")
+	if deadline != nil && deadline.Before(time.Now()) {
+		return "截止时间不能早于当前时间"
 	}
 
 	todo := &models.Todo{
 		UserID:      userID,
-		Title:       req.Title,
-		Description: req.Description,
+		Title:       title,
+		Description: description,
 		Status:      "pending",
-		StartTime:   req.StartTime,
-		DDL:         req.Deadline,
+		StartTime:   startTime,
+		DDL:         deadline,
 	}
 
 	if err := s.todoRepository.CreateTodo(todo); err != nil {
-		return nil, err
+		return err.Error()
 	}
 
-	return todo, nil
+	return "创建成功"
 }
 
 // UpdateTodo 更新待办事项
-func (s *TodoService) UpdateTodo(userID, todoID uint, req UpdateTodoRequest) (*models.Todo, error) {
+func (s *TodoService) UpdateTodo(userID, todoID uint, title string, description string, startTime *time.Time, deadline *time.Time) string {
 	todo, err := s.todoRepository.GetTodoByID(todoID)
 	if err != nil {
-		return nil, errors.New("待办事项不存在或无权限修改")
+		return "待办事项不存在"
+	}
+
+	if todo.UserID != userID {
+		return "无权限更新该待办事项"
 	}
 
 	// 更新字段
-	if req.Title != "" {
-		todo.Title = req.Title
+	if title != "" {
+		todo.Title = title
 	}
-	if req.Description != "" {
-		todo.Description = req.Description
+	if description != "" {
+		todo.Description = description
 	}
-	if req.Status != "" {
-		todo.Status = req.Status
-		if req.Status == "completed" {
-			now := time.Now()
-			todo.CompletedAt = &now
-		} else {
-			todo.CompletedAt = nil
-		}
+	if startTime != nil {
+		todo.StartTime = startTime
 	}
-	if req.StartTime != nil {
-		todo.StartTime = req.StartTime
-	}
-	if req.Deadline != nil {
+	if deadline != nil {
 		// 验证DDL时间
-		if req.Deadline.Before(time.Now()) {
-			return nil, errors.New("截止时间不能早于当前时间")
+		if deadline.Before(time.Now()) {
+			return "截止时间不能早于当前时间"
 		}
-		todo.DDL = req.Deadline
+		todo.DDL = deadline
 	}
 
 	if err := s.todoRepository.UpdateTodo(todo); err != nil {
-		return nil, err
+		return err.Error()
 	}
 
-	return todo, nil
+	return "更新成功"
 }
 
-func (s *TodoService) GetTodosByUserID(userID uint, filters map[string]interface{}) ([]models.Todo, error) {
-	return s.todoRepository.GetTodosByUserID(userID, filters)
+func (s *TodoService) GetTodosByUserID(userID uint) ([]TodoInfo, string) {
+	todos, err := s.todoRepository.GetTodosByUserID(userID)
+	if err != nil {
+		return nil, err.Error()
+	}
+	var todoInfos []TodoInfo
+	for _, todo := range todos {
+		todoInfos = append(todoInfos, TodoInfo{
+			ID:          todo.ID,
+			Title:       todo.Title,
+			Description: todo.Description,
+			Status:      todo.Status,
+			StartTime:   todo.StartTime,
+			Deadline:    todo.DDL,
+			CompletedAt: todo.CompletedAt,
+		})
+	}
+	return todoInfos, ""
 }
 
-func (s *TodoService) GetTodoByID(id uint) (*models.Todo, error) {
-	return s.todoRepository.GetTodoByID(id)
+func (s *TodoService) GetTodoByID(userID, id uint) (TodoInfo, string) {
+	todo, err := s.todoRepository.GetTodoByID(id)
+	if err != nil {
+		return TodoInfo{}, err.Error()
+	}
+	if todo.UserID != userID {
+		return TodoInfo{}, "无权限访问该待办事项"
+	}
+	todoinfo := TodoInfo{
+		ID:          todo.ID,
+		Title:       todo.Title,
+		Description: todo.Description,
+		Status:      todo.Status,
+		StartTime:   todo.StartTime,
+		Deadline:    todo.DDL,
+		CompletedAt: todo.CompletedAt,
+	}
+	return todoinfo, ""
 }
 
 // DeleteTodo 删除待办事项
-func (s *TodoService) DeleteTodo(userID, todoID uint) error {
-	return s.todoRepository.DeleteTodo(todoID)
+func (s *TodoService) DeleteTodo(userID, todoID uint) string {
+	todo, err := s.todoRepository.GetTodoByID(todoID)
+	if err != nil {
+		return "待办事项不存在"
+	}
+	if todo.UserID != userID {
+		return "无权限删除该待办事项"
+	}
+	if err := s.todoRepository.DeleteTodo(todoID); err != nil {
+		return err.Error()
+	}
+	return "删除成功"
 }
 
 // UpdateTodoStatus 更新待办事项状态
-func (s *TodoService) UpdateTodoStatus(userID, todoID uint, status string) error {
+func (s *TodoService) UpdateTodoStatus(userID, todoID uint, status string) string {
 	// 验证状态
 	validStatuses := map[string]bool{
 		"pending":     true,
@@ -139,8 +146,12 @@ func (s *TodoService) UpdateTodoStatus(userID, todoID uint, status string) error
 	}
 
 	if !validStatuses[status] {
-		return errors.New("无效的状态值")
+		return "无效的状态值"
 	}
 
-	return s.todoRepository.UpdateTodoStatus(todoID, userID, status)
+	err := s.todoRepository.UpdateTodoStatus(todoID, userID, status)
+	if err != nil {
+		return err.Error()
+	}
+	return "更新成功"
 }

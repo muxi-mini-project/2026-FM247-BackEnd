@@ -74,7 +74,7 @@ type Todo struct {
 	UserID      uint       `gorm:"not null;index" json:"user_id"`                    // 关联用户ID
 	Title       string     `gorm:"type:varchar(255);not null" json:"title"`          // 标题
 	Description string     `gorm:"type:text" json:"description"`                     // 描述
-	Status      string     `gorm:"type:varchar(20);default:'pending'" json:"status"` // 完成状态: pending, in_progress, completed
+	Status      string     `gorm:"type:varchar(20);default:'pending'" json:"status"` // 完成状态: pending, completed, overdue
 	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`                 // 创建时间
 	StartTime   *time.Time `gorm:"index" json:"start_time"`                          // 开始时间（可选）
 	DDL         *time.Time `gorm:"index" json:"deadline"`                            // DDL（截止时间，可选）

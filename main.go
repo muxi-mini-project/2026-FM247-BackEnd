@@ -30,14 +30,16 @@ func main() {
 	//dao层初始化
 	userRepo := repository.NewUserRepository(db)
 	tokenRepo := repository.NewTokenBlacklistRepository(db)
+	todoRepo := repository.NewTodoRepository(db)
 
 	//service层初始化
 	userService := service.NewUserService(userRepo, tokenRepo)
 	tokenService := service.NewTokenBlacklistService(tokenRepo)
+	todoService := service.NewTodoService(todoRepo)
 
 	//handler层初始化
 	authhandler := handler.NewAuthHandler(tokenService, userService)
-
+	todohandler := handler.NewTodoHandler(todoService)
 	// 启动服务器
 	r := gin.Default()
 
@@ -60,7 +62,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	router.RegisterRoutes(r, authhandler)
+	router.RegisterRoutes(r, authhandler, todohandler)
 
 	port := ":" + config.AppConfig.ServerPort
 	fmt.Printf("服务器正在运行，监听端口 %s\n", port)

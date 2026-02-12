@@ -10,6 +10,7 @@ import (
 func RegisterRoutes(
 	r *gin.Engine,
 	authhandler *handler.AuthHandler,
+	todohandler *handler.TodoHandler,
 ) {
 	publicGroup := r.Group("/api")
 	{
@@ -28,5 +29,13 @@ func RegisterRoutes(
 		authGroup.POST("/user/update_email", authhandler.UpdateEmailHandler)
 		authGroup.POST("/user/update_password", authhandler.UpdatePasswordHandler)
 		authGroup.GET("/user/info", authhandler.GetUserInfoHandler)
+
+		// 待办事项相关
+		authGroup.POST("/todos", todohandler.CreateTodo)
+		authGroup.GET("/todos", todohandler.GetTodos)
+		authGroup.GET("/todos/:id", todohandler.GetTodoByID)
+		authGroup.PUT("/todos/:id", todohandler.UpdateTodo)
+		authGroup.DELETE("/todos/:id", todohandler.DeleteTodo)
+		authGroup.PATCH("/todos/:id/status", todohandler.UpdateTodoStatus)
 	}
 }

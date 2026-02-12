@@ -13,3 +13,13 @@ type UserInfo struct {
 	Level      int       `json:"level"`
 	CreatedAt  time.Time `json:"created_at"`
 }
+
+type TodoInfo struct {
+	ID          uint       `json:"id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`
+	StartTime   *time.Time `json:"start_time"`
+	Deadline    *time.Time `json:"deadline"`
+	CompletedAt *time.Time `json:"completed_at"`
+}

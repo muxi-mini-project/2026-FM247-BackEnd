@@ -17,17 +17,10 @@ func NewTodoRepository(db *gorm.DB) *TodoRepository {
 }
 
 func (r *TodoRepository) CreateTodo(todo *models.Todo) error {
-	if todo.Title == "" {
-		return fmt.Errorf("任务不能为空")
-	}
-	if todo.DDL != nil && todo.DDL.Before(todo.CreatedAt) {
-		return fmt.Errorf("截止日期不能早于创建日期")
-	}
-
 	return r.db.Create(todo).Error
 }
 
-func (r *TodoRepository) GetTodosByUserID(userID uint, filters map[string]interface{}) ([]models.Todo, error) {
+func (r *TodoRepository) GetTodosByUserID(userID uint) ([]models.Todo, error) {
 	if userID == 0 {
 		return nil, fmt.Errorf("无效的用户ID")
 	}
@@ -35,32 +28,15 @@ func (r *TodoRepository) GetTodosByUserID(userID uint, filters map[string]interf
 	var todos []models.Todo
 	query := r.db.Where("user_id = ?", userID)
 
-	// 应用过滤器
-	if status, ok := filters["status"]; ok {
-		query = query.Where("status = ?", status)
-	}
-
-	if startDate, ok := filters["start_date"]; ok {
-		query = query.Where("DATE(created_at) >= ?", startDate)
-	}
-
-	if endDate, ok := filters["end_date"]; ok {
-		query = query.Where("DATE(created_at) <= ?", endDate)
-	}
-
 	// 排序
 	query = query.Order("created_at DESC")
 
 	err := query.Find(&todos).Error
+
 	return todos, err
 }
 
 func (r *TodoRepository) GetTodoByID(id uint) (*models.Todo, error) {
-
-	if id == 0 {
-		return nil, fmt.Errorf("无效的ID")
-	}
-
 	var todo models.Todo
 	err := r.db.First(&todo, id).Error
 	return &todo, err
