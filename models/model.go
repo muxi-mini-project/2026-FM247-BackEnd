@@ -70,16 +70,11 @@ type User struct {
 
 // Todo 待办事项表
 type Todo struct {
-	ID          uint       `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID      uint       `gorm:"not null;index" json:"user_id"`                    // 关联用户ID
-	Title       string     `gorm:"type:varchar(255);not null" json:"title"`          // 标题
-	Description string     `gorm:"type:text" json:"description"`                     // 描述
-	Status      string     `gorm:"type:varchar(20);default:'pending'" json:"status"` // 完成状态: pending, completed, overdue
-	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`                 // 创建时间
-	StartTime   *time.Time `gorm:"index" json:"start_time"`                          // 开始时间（可选）
-	DDL         *time.Time `gorm:"index" json:"deadline"`                            // DDL（截止时间，可选）
-	CompletedAt *time.Time `json:"completed_at"`                                     // 完成时间（可选）
-	User        User       `gorm:"foreignKey:UserID" json:"-"`
+	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID    uint      `gorm:"not null;index" json:"user_id"`           // 关联用户ID
+	Event     string    `gorm:"type:varchar(255);not null" json:"event"` // 事件
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`        // 创建时间
+	User      User      `gorm:"foreignKey:UserID" json:"-"`
 }
 
 // Audio 音频表 - 对应图片1的"音频"表
@@ -108,30 +103,3 @@ type TokenBlacklist struct {
 	Jti       string         `json:"jti" gorm:"type:varchar(255);uniqueIndex"`
 	ExpiresAt time.Time      `json:"expires_at"`
 }
-
-// 番茄钟实体定义
-// type Tomato struct {
-// 	ID     string `json:"id"`      // 番茄钟ID
-// 	UserID uint   `json:"user_id"` // 用户ID
-
-// 	// 时间配置
-// 	StudyDuration int `json:"study_duration"` // 学习时长（分钟）
-// 	BreakDuration int `json:"break_duration"` // 休息时长（分钟）
-
-// 	// 循环配置
-// 	AutoContinue bool `json:"auto_continue"` // 是否自动继续下一个番茄钟
-// 	TotalCycles  int  `json:"total_cycles"`  // 总循环次数
-// 	CurrentCycle int  `json:"current_cycle"` // 当前循环次数
-
-// 	// 状态信息
-// 	Status       string `json:"status"`        // 当前状态(running, paused, completed)
-// 	Phase        string `json:"phase"`         // 当前阶段(study, break)
-// 	RemainingSec int    `json:"remaining_sec"` // 剩余秒数
-// 	ElapsedSec   int    `json:"elapsed_sec"`   // 已过秒数
-// 	PausedSec    int    `json:"paused_sec"`    // 暂停秒数
-// 	TotalElapsed int    `json:"total_elapsed"` // 总学习分钟:(已过秒数-暂停秒数)/60
-
-// 	// 时间戳
-// 	StartedAt   time.Time  `json:"started_at"`
-// 	CompletedAt *time.Time `json:"completed_at,omitempty"`
-// }

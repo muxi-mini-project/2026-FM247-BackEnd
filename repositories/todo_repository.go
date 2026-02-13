@@ -3,7 +3,6 @@ package repository
 import (
 	"2026-FM247-BackEnd/models"
 	"fmt"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -59,22 +58,4 @@ func (r *TodoRepository) DeleteTodo(id uint) error {
 	}
 
 	return r.db.Delete(&models.Todo{}, id).Error
-}
-
-// UpdateTodoStatus 更新待办事项状态
-func (r *TodoRepository) UpdateTodoStatus(id uint, userID uint, status string) error {
-	updates := map[string]interface{}{
-		"status": status,
-	}
-
-	if status == "completed" {
-		now := time.Now()
-		updates["completed_at"] = &now
-	} else if status == "pending" || status == "in_progress" {
-		updates["completed_at"] = nil
-	}
-
-	return r.db.Model(&models.Todo{}).
-		Where("id = ? AND user_id = ?", id, userID).
-		Updates(updates).Error
 }

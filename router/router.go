@@ -36,6 +36,5 @@ func RegisterRoutes(
 		authGroup.GET("/todos/:id", todohandler.GetTodoByID)
 		authGroup.PUT("/todos/:id", todohandler.UpdateTodo)
 		authGroup.DELETE("/todos/:id", todohandler.DeleteTodo)
-		authGroup.PATCH("/todos/:id/status", todohandler.UpdateTodoStatus)
 	}
 }
