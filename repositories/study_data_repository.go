@@ -27,12 +27,12 @@ func NewStudyDataRepository(db *gorm.DB, redis *redis.Client) *StudyDataReposito
 }
 
 // 生成redis的每日key
-func (r *StudyDataRepository) generateDailyKey(userID uint, date time.Time) string {
+func (r *StudyDataRepository) GenerateDailyKey(userID uint, date time.Time) string {
 	return fmt.Sprintf("user:%d:studydata:date:%s", userID, date.Format("2006-01-02"))
 }
 
 // 生成redis的每月key
-func (r *StudyDataRepository) generateMonthlyKey(userID uint, date time.Time) string {
+func (r *StudyDataRepository) GenerateMonthlyKey(userID uint, date time.Time) string {
 	return fmt.Sprintf("user:%d:studydata:month:%s", userID, date.Format("2006-01"))
 }
 
@@ -42,8 +42,8 @@ func (r *StudyDataRepository) generateMonthlyKey(userID uint, date time.Time) st
 
 // 增加每日和每月学习时长
 func (r *StudyDataRepository) IncrementDailyStudyTime(userID uint, date time.Time, studyTime int) error {
-	dailykey := r.generateDailyKey(userID, date)
-	monthlykey := r.generateMonthlyKey(userID, date)
+	dailykey := r.GenerateDailyKey(userID, date)
+	monthlykey := r.GenerateMonthlyKey(userID, date)
 
 	pipe := r.redis.Pipeline()
 	pipe.HIncrBy(r.ctx, dailykey, "study_time", int64(studyTime))
@@ -57,10 +57,10 @@ func (r *StudyDataRepository) IncrementDailyStudyTime(userID uint, date time.Tim
 	return err
 }
 
-// 增加每日和每月番茄钟次数，随后同步mysql
+// 增加每日和每月番茄钟次数
 func (r *StudyDataRepository) IncrementDailyTomatoes(userID uint, date time.Time, tomatoes int) error {
-	dailykey := r.generateDailyKey(userID, date)
-	monthlykey := r.generateMonthlyKey(userID, date)
+	dailykey := r.GenerateDailyKey(userID, date)
+	monthlykey := r.GenerateMonthlyKey(userID, date)
 
 	pipe := r.redis.Pipeline()
 	pipe.HIncrBy(r.ctx, dailykey, "tomatoes", int64(tomatoes))
@@ -75,13 +75,13 @@ func (r *StudyDataRepository) IncrementDailyTomatoes(userID uint, date time.Time
 		return err
 	}
 
-	return r.SyncDailyDataToMySQL(userID, date)
+	return nil
 }
 
 // 同步数据到mysql
-func (r *StudyDataRepository) SyncDailyDataToMySQL(userID uint, date time.Time) error {
-	dailykey := r.generateDailyKey(userID, date)
-	monthlykey := r.generateMonthlyKey(userID, date)
+func (r *StudyDataRepository) SyncDailyDataToMySQL(userID uint, date time.Time, addStudyTime int, addTomatoes int) error {
+	dailykey := r.GenerateDailyKey(userID, date)
+	monthlykey := r.GenerateMonthlyKey(userID, date)
 
 	daydata, err := r.redis.HGetAll(r.ctx, dailykey).Result()
 	if err != nil {
@@ -114,11 +114,17 @@ func (r *StudyDataRepository) SyncDailyDataToMySQL(userID uint, date time.Time) 
 		Tomatoes:  monthtomatoes,
 	}
 
+	totalData := models.TotalStudyData{
+		UserID:    userID,
+		StudyTime: addStudyTime,
+		Tomatoes:  addTomatoes,
+	}
+
 	tx := r.db.Begin()
 	//更新每日数据
 	err = tx.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "user_id"}, {Name: "date"}},
-		DoUpdates: clause.AssignmentColumns([]string{"study_time", "tomatoes", "end_at", "updated_at"}),
+		DoUpdates: clause.AssignmentColumns([]string{"study_time", "tomatoes", "updated_at"}),
 	}).Create(&dailyData).Error
 	if err != nil {
 		tx.Rollback()
@@ -127,7 +133,7 @@ func (r *StudyDataRepository) SyncDailyDataToMySQL(userID uint, date time.Time) 
 	//更新每月数据
 	err = tx.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "user_id"}, {Name: "month"}},
-		DoUpdates: clause.AssignmentColumns([]string{"study_time", "tomatoes", "end_at", "updated_at"}),
+		DoUpdates: clause.AssignmentColumns([]string{"study_time", "tomatoes", "updated_at"}),
 	}).Create(&monthlyData).Error
 	if err != nil {
 		tx.Rollback()
@@ -137,10 +143,11 @@ func (r *StudyDataRepository) SyncDailyDataToMySQL(userID uint, date time.Time) 
 	err = tx.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "user_id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"study_time": gorm.Expr("study_time + ?", daystudytime),
-			"tomatoes":   gorm.Expr("tomatoes + ?", daytomatoes),
+			"study_time": gorm.Expr("study_time + ?", addStudyTime),
+			"tomatoes":   gorm.Expr("tomatoes + ?", addTomatoes),
+			"updated_at": time.Now(),
 		}),
-	}).Create(&dailyData).Error
+	}).Create(&totalData).Error
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -156,7 +163,7 @@ func (r *StudyDataRepository) SyncDailyDataToMySQL(userID uint, date time.Time) 
 // 查询每日学习数据
 // 考虑先从redis中查，没有再从mysql中查，同时将该数据同步至redis，设置过期时间12小时
 func (r *StudyDataRepository) GetDailyStudyData(userID uint, date time.Time) (*models.DailyStudyData, error) {
-	dailykey := r.generateDailyKey(userID, date)
+	dailykey := r.GenerateDailyKey(userID, date)
 
 	data, err := r.redis.HGetAll(r.ctx, dailykey).Result()
 	if err != nil {
@@ -197,7 +204,7 @@ func (r *StudyDataRepository) GetDailyStudyData(userID uint, date time.Time) (*m
 // 查询每月学习数据
 // 思路同上
 func (r *StudyDataRepository) GetMonthlyStudyData(userID uint, date time.Time) (*models.MonthlyStudyData, error) {
-	monthlykey := r.generateMonthlyKey(userID, date)
+	monthlykey := r.GenerateMonthlyKey(userID, date)
 	data, err := r.redis.HGetAll(r.ctx, monthlykey).Result()
 	if err != nil {
 		return nil, err
@@ -290,7 +297,7 @@ func (r *StudyDataRepository) GetStudyDataSummary(userID uint, startDate, endDat
 
 	// 如果查询范围包含"今天"
 	if (today.Equal(startDate) || today.After(startDate)) && (today.Equal(endDate) || today.Before(endDate)) {
-		dailyKey := r.generateDailyKey(userID, today)
+		dailyKey := r.GenerateDailyKey(userID, today)
 		redisData, err := r.redis.HGetAll(r.ctx, dailyKey).Result()
 
 		if err == nil && len(redisData) > 0 {

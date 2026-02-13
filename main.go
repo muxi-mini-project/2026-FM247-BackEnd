@@ -22,24 +22,35 @@ func main() {
 
 	db, err := config.ConnectDatabase()
 	if err != nil {
-		fmt.Printf("无法连接到数据库: %v\n", err)
+		fmt.Printf("无法连接到mysql数据库: %v\n", err)
 		return
 	}
+
+	redisClient, err := config.ConnectRedis()
+	if err != nil {
+		fmt.Printf("无法连接到Redis: %v\n", err)
+		return
+	}
+
 	fmt.Println("数据库连接成功")
 
 	//dao层初始化
 	userRepo := repository.NewUserRepository(db)
 	tokenRepo := repository.NewTokenBlacklistRepository(db)
 	todoRepo := repository.NewTodoRepository(db)
+	studyDataRepo := repository.NewStudyDataRepository(db, redisClient)
 
 	//service层初始化
 	userService := service.NewUserService(userRepo, tokenRepo)
 	tokenService := service.NewTokenBlacklistService(tokenRepo)
 	todoService := service.NewTodoService(todoRepo)
+	studyDataService := service.NewStudyDataService(studyDataRepo)
 
 	//handler层初始化
 	authhandler := handler.NewAuthHandler(tokenService, userService)
 	todohandler := handler.NewTodoHandler(todoService)
+	studydatahandler := handler.NewStudyDataHandler(studyDataService)
+
 	// 启动服务器
 	r := gin.Default()
 
@@ -62,8 +73,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	router.RegisterRoutes(r, authhandler, todohandler)
-
+	router.RegisterRoutes(r, authhandler, todohandler, studydatahandler)
 	port := ":" + config.AppConfig.ServerPort
 	fmt.Printf("服务器正在运行，监听端口 %s\n", port)
 	if err := r.Run(port); err != nil {

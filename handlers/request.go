@@ -1,7 +1,5 @@
 package handler
 
-import "time"
-
 //============用户认证请求结构体=============
 type RegisterUser struct {
 	Username string `json:"username"`
@@ -36,20 +34,17 @@ type CancelUser struct {
 
 //============待办事项请求结构体=============
 type CreateTodoRequest struct {
-	Title       string     `json:"title" binding:"required"`
-	Description string     `json:"description"`
-	StartTime   *time.Time `json:"start_time"`
-	Deadline    *time.Time `json:"deadline" binding:"required"` // DDL为必填
+	Event string `json:"event" binding:"required"`
 }
 
 // UpdateTodoRequest 更新待办事项请求
 type UpdateTodoRequest struct {
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	StartTime   *time.Time `json:"start_time"`
-	Deadline    *time.Time `json:"deadline"`
+	Event string `json:"event"`
 }
 
-type UpdateTodoStatusRequest struct {
-	Status string `json:"status" binding:"required,oneof=pending completed"`
+//============学习数据请求结构体=============
+type AddStudyDataRequest struct {
+	Date      string `json:"date" binding:"required"` // 日期字符串，格式为 "YYYY-MM-DD"
+	StudyTime int    `json:"study_time" binding:"required"`
+	Tomatoes  int    `json:"tomatoes" binding:"required"`
 }

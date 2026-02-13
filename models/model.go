@@ -11,7 +11,7 @@ type TotalStudyData struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
-	UserID    uint           `json:"user_id"`
+	UserID    uint           `json:"user_id" gorm:"uniqueIndex"`
 	StudyTime int            `json:"study_time"`
 	Tomatoes  int            `json:"tomatoes"`
 }

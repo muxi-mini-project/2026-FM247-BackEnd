@@ -11,6 +11,7 @@ func RegisterRoutes(
 	r *gin.Engine,
 	authhandler *handler.AuthHandler,
 	todohandler *handler.TodoHandler,
+	studydatahandler *handler.StudyDataHandler,
 ) {
 	publicGroup := r.Group("/api")
 	{
@@ -36,5 +37,13 @@ func RegisterRoutes(
 		authGroup.GET("/todos/:id", todohandler.GetTodoByID)
 		authGroup.PUT("/todos/:id", todohandler.UpdateTodo)
 		authGroup.DELETE("/todos/:id", todohandler.DeleteTodo)
+
+		// 学习数据相关
+		authGroup.POST("/studydata", studydatahandler.AddStudyData)
+		authGroup.GET("/studydata/daily/:date", studydatahandler.GetDailyStudyData)
+		authGroup.GET("/studydata/total", studydatahandler.GetTotalStudyData)
+		authGroup.GET("/studydata/weekly/:date", studydatahandler.GetWeekStudyData)
+		authGroup.GET("/studydata/monthly/:date", studydatahandler.GetMonthlyStudyData)
+		authGroup.GET("/studydata/yearly/:date", studydatahandler.GetYearStudyData)
 	}
 }
