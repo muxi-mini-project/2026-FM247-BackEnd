@@ -19,13 +19,13 @@ type UpdateUserInfo struct {
 }
 
 type UpdateEmail struct {
-	NewEmail string `json:"new_email"`
+	NewEmail string `json:"newemail"`
 	Password string `json:"password"`
 }
 
 type UpdatePassword struct {
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
+	OldPassword string `json:"oldpassword"`
+	NewPassword string `json:"newpassword"`
 }
 
 type CancelUser struct {
@@ -44,7 +44,6 @@ type UpdateTodoRequest struct {
 
 //============学习数据请求结构体=============
 type AddStudyDataRequest struct {
-	Date      string `json:"date" binding:"required"` // 日期字符串，格式为 "YYYY-MM-DD"
-	StudyTime int    `json:"study_time" binding:"required"`
-	Tomatoes  int    `json:"tomatoes" binding:"required"`
+	StudyTime int `json:"studytime" binding:"required"`
+	Tomatoes  int `json:"tomatoes" binding:"required"`
 }

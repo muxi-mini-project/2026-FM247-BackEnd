@@ -24,14 +24,16 @@ type TokenService interface {
 }
 
 type AuthHandler struct {
-	Tokenservice TokenService
-	Userservice  UserService
+	Tokenservice     TokenService
+	Userservice      UserService
+	StudyDataService StudyDataService
 }
 
-func NewAuthHandler(tokenservice TokenService, userservice UserService) *AuthHandler {
+func NewAuthHandler(tokenservice TokenService, userservice UserService, studyDataService StudyDataService) *AuthHandler {
 	return &AuthHandler{
-		Tokenservice: tokenservice,
-		Userservice:  userservice,
+		Tokenservice:     tokenservice,
+		Userservice:      userservice,
+		StudyDataService: studyDataService,
 	}
 }
 
@@ -232,9 +234,26 @@ func (h *AuthHandler) GetUserInfoHandler(c *gin.Context) {
 	// 从数据库获取完整的用户信息
 	userinfo, err := h.Userservice.GetUserInfo(claims.UserID)
 	if err != nil {
-		FailWithMessage(c, "获取用户信息失败")
+		FailWithMessage(c, "获取用户信息失败: "+err.Error())
 		return
 	}
 
-	OkWithData(c, userinfo)
+	studyData, msg := h.StudyDataService.GetTotalStudyData(claims.UserID)
+	if msg != "" {
+		FailWithMessage(c, "获取学习数据失败："+msg)
+		return
+	}
+
+	OkWithData(c, gin.H{
+		"id":         userinfo.ID,
+		"username":   userinfo.Username,
+		"email":      userinfo.Email,
+		"telenum":    userinfo.Telenum,
+		"avatarpath": userinfo.Avatar,
+		"experience": userinfo.Experience,
+		"level":      userinfo.Level,
+		"createdat":  userinfo.CreatedAt,
+		"studytime":  studyData.StudyTime,
+		"tomatoes":   studyData.Tomatoes,
+	})
 }

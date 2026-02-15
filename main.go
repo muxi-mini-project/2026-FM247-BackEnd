@@ -47,21 +47,12 @@ func main() {
 	studyDataService := service.NewStudyDataService(studyDataRepo)
 
 	//handler层初始化
-	authhandler := handler.NewAuthHandler(tokenService, userService)
+	authhandler := handler.NewAuthHandler(tokenService, userService, studyDataService)
 	todohandler := handler.NewTodoHandler(todoService)
 	studydatahandler := handler.NewStudyDataHandler(studyDataService)
 
 	// 启动服务器
 	r := gin.Default()
-
-	// 打印请求头的中间件，需放在其他中间件和路由注册前
-	r.Use(func(c *gin.Context) {
-		fmt.Println("请求头：")
-		for k, v := range c.Request.Header {
-			fmt.Printf("%s: %v\n", k, v)
-		}
-		c.Next()
-	})
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{ // 允许的请求源

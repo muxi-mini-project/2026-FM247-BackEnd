@@ -9,10 +9,10 @@ type UserInfo struct {
 	Email      string    `json:"email"`
 	Gender     string    `json:"gender"`
 	Telenum    string    `json:"telenum"`
-	Avatar     string    `json:"avatar_path"`
+	Avatar     string    `json:"avatarpath"`
 	Experience int       `json:"experience"`
 	Level      int       `json:"level"`
-	CreatedAt  time.Time `json:"created_at"`
+	CreatedAt  time.Time `json:"createdat"`
 }
 
 // 待办事项dto
@@ -24,19 +24,19 @@ type TodoInfo struct {
 // 每日学习数据dto
 type DailyStudyDataInfo struct {
 	Date      time.Time `json:"date"`
-	StudyTime int       `json:"study_time"`
+	StudyTime int       `json:"studytime"`
 	Tomatoes  int       `json:"tomatoes"`
 }
 
 // 每月学习数据dto
 type MonthlyStudyDataInfo struct {
 	Month     time.Time `json:"month"`
-	StudyTime int       `json:"study_time"`
+	StudyTime int       `json:"studytime"`
 	Tomatoes  int       `json:"tomatoes"`
 }
 
 // 总学习数据dto
 type TotalStudyDataInfo struct {
-	StudyTime int `json:"study_time"`
+	StudyTime int `json:"studytime"`
 	Tomatoes  int `json:"tomatoes"`
 }

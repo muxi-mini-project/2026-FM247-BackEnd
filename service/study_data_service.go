@@ -11,9 +11,9 @@ type StudyDataRepository interface {
 	IncrementDailyStudyTime(userID uint, date time.Time, studyTime int) error
 	IncrementDailyTomatoes(userID uint, date time.Time, tomatoes int) error
 	SyncDailyDataToMySQL(userID uint, date time.Time, addStudyTime int, addTomatoes int) error
-	GetDailyStudyData(userID uint, date time.Time) (*models.DailyStudyData, error)
-	GetMonthlyStudyData(userID uint, date time.Time) (*models.MonthlyStudyData, error)
-	GetTotalStudyData(userID uint) (*models.TotalStudyData, error)
+	GetDailyStudyData(userID uint, date time.Time) (*models.DailyStudyData, error, bool)
+	GetMonthlyStudyData(userID uint, date time.Time) (*models.MonthlyStudyData, error, bool)
+	GetTotalStudyData(userID uint) (*models.TotalStudyData, error, bool)
 	GetStudyDataSummary(userID uint, startDate, endDate time.Time) ([]models.DailyStudyData, error)
 }
 
@@ -47,7 +47,14 @@ func (s *StudyDataService) AddStudyData(userID uint, date time.Time, studyTime i
 
 // 获取每日学习数据
 func (s *StudyDataService) GetDailyStudyData(userID uint, date time.Time) (DailyStudyDataInfo, string) {
-	data, err := s.repo.GetDailyStudyData(userID, date)
+	data, err, notFound := s.repo.GetDailyStudyData(userID, date)
+	if notFound {
+		return DailyStudyDataInfo{
+			Date:      date,
+			StudyTime: 0,
+			Tomatoes:  0,
+		}, ""
+	}
 	if err != nil {
 		return DailyStudyDataInfo{}, "查询每日学习数据失败" + err.Error()
 	}
@@ -60,7 +67,14 @@ func (s *StudyDataService) GetDailyStudyData(userID uint, date time.Time) (Daily
 
 // 获取每月学习数据
 func (s *StudyDataService) GetMonthlyStudyData(userID uint, date time.Time) (MonthlyStudyDataInfo, string) {
-	data, err := s.repo.GetMonthlyStudyData(userID, date)
+	data, err, notFound := s.repo.GetMonthlyStudyData(userID, date)
+	if notFound {
+		return MonthlyStudyDataInfo{
+			Month:     date,
+			StudyTime: 0,
+			Tomatoes:  0,
+		}, ""
+	}
 	if err != nil {
 		return MonthlyStudyDataInfo{}, "查询每月学习数据失败" + err.Error()
 	}
@@ -73,9 +87,15 @@ func (s *StudyDataService) GetMonthlyStudyData(userID uint, date time.Time) (Mon
 
 // 获取总学习数据
 func (s *StudyDataService) GetTotalStudyData(userID uint) (TotalStudyDataInfo, string) {
-	data, err := s.repo.GetTotalStudyData(userID)
+	data, err, notFound := s.repo.GetTotalStudyData(userID)
+	if notFound {
+		return TotalStudyDataInfo{
+			StudyTime: 0,
+			Tomatoes:  0,
+		}, ""
+	}
 	if err != nil {
-		return TotalStudyDataInfo{}, "查询总学习数据失败" + err.Error()
+		return TotalStudyDataInfo{}, "查询总学习数据失败：" + err.Error()
 	}
 	return TotalStudyDataInfo{
 		StudyTime: data.StudyTime,

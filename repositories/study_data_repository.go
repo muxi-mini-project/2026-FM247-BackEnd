@@ -162,20 +162,23 @@ func (r *StudyDataRepository) SyncDailyDataToMySQL(userID uint, date time.Time, 
 
 // 查询每日学习数据
 // 考虑先从redis中查，没有再从mysql中查，同时将该数据同步至redis，设置过期时间12小时
-func (r *StudyDataRepository) GetDailyStudyData(userID uint, date time.Time) (*models.DailyStudyData, error) {
+func (r *StudyDataRepository) GetDailyStudyData(userID uint, date time.Time) (*models.DailyStudyData, error, bool) {
 	dailykey := r.GenerateDailyKey(userID, date)
 
 	data, err := r.redis.HGetAll(r.ctx, dailykey).Result()
 	if err != nil {
-		return nil, err
+		return nil, err, false
 	}
 
 	if len(data) == 0 {
 		//查询mysql
 		var dailyData models.DailyStudyData
 		result := r.db.Where("user_id = ? AND date = ?", userID, time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())).First(&dailyData)
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("还未开始记录学习数据"), true
+		}
 		if result.Error != nil {
-			return nil, result.Error
+			return nil, result.Error, false
 		}
 		//同步至redis
 		pipe := r.redis.Pipeline()
@@ -184,9 +187,9 @@ func (r *StudyDataRepository) GetDailyStudyData(userID uint, date time.Time) (*m
 		pipe.Expire(r.ctx, dailykey, 12*time.Hour)
 		_, err = pipe.Exec(r.ctx)
 		if err != nil {
-			return nil, err
+			return nil, err, false
 		}
-		return &dailyData, nil
+		return &dailyData, nil, false
 	}
 
 	studyTime, _ := strconv.Atoi(data["study_time"])
@@ -198,23 +201,26 @@ func (r *StudyDataRepository) GetDailyStudyData(userID uint, date time.Time) (*m
 		Tomatoes:  tomatoes,
 	}
 
-	return dailyData, nil
+	return dailyData, nil, false
 }
 
 // 查询每月学习数据
 // 思路同上
-func (r *StudyDataRepository) GetMonthlyStudyData(userID uint, date time.Time) (*models.MonthlyStudyData, error) {
+func (r *StudyDataRepository) GetMonthlyStudyData(userID uint, date time.Time) (*models.MonthlyStudyData, error, bool) {
 	monthlykey := r.GenerateMonthlyKey(userID, date)
 	data, err := r.redis.HGetAll(r.ctx, monthlykey).Result()
 	if err != nil {
-		return nil, err
+		return nil, err, false
 	}
 	if len(data) == 0 {
 		//查询mysql
 		var monthlyData models.MonthlyStudyData
 		result := r.db.Where("user_id = ? AND month = ?", userID, time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, date.Location())).First(&monthlyData)
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("还未开始记录学习数据"), true
+		}
 		if result.Error != nil {
-			return nil, result.Error
+			return nil, result.Error, false
 		}
 		//同步至redis
 		pipe := r.redis.Pipeline()
@@ -223,9 +229,9 @@ func (r *StudyDataRepository) GetMonthlyStudyData(userID uint, date time.Time) (
 		pipe.Expire(r.ctx, monthlykey, 12*time.Hour)
 		_, err = pipe.Exec(r.ctx)
 		if err != nil {
-			return nil, err
+			return nil, err, false
 		}
-		return &monthlyData, nil
+		return &monthlyData, nil, false
 	}
 	studyTime, _ := strconv.Atoi(data["study_time"])
 	tomatoes, _ := strconv.Atoi(data["tomatoes"])
@@ -235,23 +241,26 @@ func (r *StudyDataRepository) GetMonthlyStudyData(userID uint, date time.Time) (
 		StudyTime: studyTime,
 		Tomatoes:  tomatoes,
 	}
-	return monthlyData, nil
+	return monthlyData, nil, false
 }
 
 // 查询总学习数据
 // 总数据仅存于mysql中, 但为了性能优化, 查询后会缓存至redis, 设置过期时间24小时
-func (r *StudyDataRepository) GetTotalStudyData(userID uint) (*models.TotalStudyData, error) {
+func (r *StudyDataRepository) GetTotalStudyData(userID uint) (*models.TotalStudyData, error, bool) {
 	totalkey := fmt.Sprintf("user:%d:studydata:total", userID)
 	data, err := r.redis.HGetAll(r.ctx, totalkey).Result()
 	if err != nil {
-		return nil, err
+		return nil, err, false
 	}
 	if len(data) == 0 {
 		//查询mysql
 		var totalData models.TotalStudyData
 		result := r.db.Where("user_id = ?", userID).First(&totalData)
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("还未开始记录学习数据"), true
+		}
 		if result.Error != nil {
-			return nil, result.Error
+			return nil, result.Error, false
 		}
 		//同步至redis
 		pipe := r.redis.Pipeline()
@@ -260,9 +269,9 @@ func (r *StudyDataRepository) GetTotalStudyData(userID uint) (*models.TotalStudy
 		pipe.ExpireNX(r.ctx, totalkey, 24*time.Hour)
 		_, err = pipe.Exec(r.ctx)
 		if err != nil {
-			return nil, err
+			return nil, err, false
 		}
-		return &totalData, nil
+		return &totalData, nil, false
 	}
 	studyTime, _ := strconv.Atoi(data["study_time"])
 	tomatoes, _ := strconv.Atoi(data["tomatoes"])
@@ -271,7 +280,7 @@ func (r *StudyDataRepository) GetTotalStudyData(userID uint) (*models.TotalStudy
 		StudyTime: studyTime,
 		Tomatoes:  tomatoes,
 	}
-	return totalData, nil
+	return totalData, nil, false
 }
 
 // 查询某段时间内的学习数据，进而生成总结报告同时返回具体每日数据，但计算总和交给上层调用者

@@ -40,10 +40,10 @@ func RegisterRoutes(
 
 		// 学习数据相关
 		authGroup.POST("/studydata", studydatahandler.AddStudyData)
-		authGroup.GET("/studydata/daily/:date", studydatahandler.GetDailyStudyData)
+		authGroup.GET("/studydata/daily", studydatahandler.GetDailyStudyData)
 		authGroup.GET("/studydata/total", studydatahandler.GetTotalStudyData)
-		authGroup.GET("/studydata/weekly/:date", studydatahandler.GetWeekStudyData)
-		authGroup.GET("/studydata/monthly/:date", studydatahandler.GetMonthlyStudyData)
-		authGroup.GET("/studydata/yearly/:date", studydatahandler.GetYearStudyData)
+		authGroup.GET("/studydata/weekly", studydatahandler.GetWeekStudyData)
+		authGroup.GET("/studydata/monthly", studydatahandler.GetMonthlyStudyData)
+		authGroup.GET("/studydata/yearly", studydatahandler.GetYearStudyData)
 	}
 }
