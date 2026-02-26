@@ -10,6 +10,7 @@ import (
 func RegisterRoutes(
 	r *gin.Engine,
 	authhandler *handler.AuthHandler,
+	avatarHandler *handler.AvatarHandler,
 	todohandler *handler.TodoHandler,
 	studydatahandler *handler.StudyDataHandler,
 ) {
@@ -30,6 +31,8 @@ func RegisterRoutes(
 		authGroup.POST("/user/update_email", authhandler.UpdateEmailHandler)
 		authGroup.POST("/user/update_password", authhandler.UpdatePasswordHandler)
 		authGroup.GET("/user/info", authhandler.GetUserInfoHandler)
+
+		authGroup.POST("/user/avatar", avatarHandler.UploadAvatar)
 
 		// 待办事项相关
 		authGroup.POST("/todos", todohandler.CreateTodo)

@@ -58,7 +58,7 @@ type User struct {
 	Gender     string    `gorm:"type:varchar(10);default:'草履虫'" json:"gender"`
 	Experience int       `gorm:"default:0" json:"experience"` // 经验值
 	Level      int       `gorm:"default:1" json:"level"`      // 等级
-	Avatar     string    `gorm:"type:varchar(500);default:'/default-avatar.png'" json:"avatar_path"`
+	Avatar     string    `gorm:"type:varchar(500);default:'http://localhost:8080/uploads/default-avatar.png'" json:"avatar_path"`
 	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
@@ -77,22 +77,16 @@ type Todo struct {
 	User      User      `gorm:"foreignKey:UserID" json:"-"`
 }
 
-// Audio 音频表 - 对应图片1的"音频"表
-type Audio struct {
-	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name      string    `gorm:"type:varchar(100);not null" json:"name"`
-	FilePath  string    `gorm:"type:varchar(500);not null" json:"file_path"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-}
-
-// UserAudioFavorite 用户音频收藏关联表
-type UserAudioFavorite struct {
-	UserID    uint      `gorm:"primaryKey" json:"user_id"`
-	AudioID   uint      `gorm:"primaryKey" json:"audio_id"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-
-	User  User  `gorm:"foreignKey:UserID" json:"-"`
-	Audio Audio `gorm:"foreignKey:AudioID" json:"-"`
+// Music 音乐
+type Music struct {
+	ID         uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	Author     string    `gorm:"type:varchar(255);not null" json:"author"`    // 音乐作者
+	Title      string    `gorm:"type:varchar(255);not null" json:"title"`     // 音乐标题
+	Duration   int       `gorm:"not null" json:"duration"`                    // 音乐时长，单位为秒
+	CoverURL   string    `gorm:"type:varchar(500);not null" json:"cover_url"` // 音乐封面URL
+	FileURL    string    `gorm:"type:varchar(500);not null" json:"url"`       // 音乐URL
+	UploaderID uint      `json:"uploader_id"`                                 // 上传者 ID
+	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`            // 创建时间
 }
 
 type TokenBlacklist struct {

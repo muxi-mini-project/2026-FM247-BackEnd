@@ -18,6 +18,7 @@ type Config struct {
 	JWTSecret  string
 	JWTExpire  time.Duration
 	ServerPort string
+	BaseURL    string
 }
 
 var AppConfig *Config
@@ -39,6 +40,7 @@ func LoadConfig() {
 		JWTSecret:  getEnv("JWT_SECRET", "your-secret-key"),
 		JWTExpire:  time.Duration(jwtExpire) * time.Hour,
 		ServerPort: getEnv("SERVER_PORT", "8080"),
+		BaseURL:    getEnv("BASE_URL", "http://localhost:8080"), // 从环境变量获取，默认即本地
 	}
 }
 

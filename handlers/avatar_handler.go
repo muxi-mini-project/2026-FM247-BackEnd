@@ -42,7 +42,7 @@ func (h *AvatarHandler) UploadAvatar(c *gin.Context) {
 	}
 
 	// 4. 上传头像
-	avatarURL, err := h.userService.UploadAvatar(claims.UserID, file, header)
+	avatarURL, err := h.userService.UploadAvatar(c.Request.Context(), claims.UserID, file, header)
 	if err != nil {
 		FailWithMessage(c, "上传失败: "+err.Error())
 		return

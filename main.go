@@ -7,6 +7,7 @@ import (
 	repository "2026-FM247-BackEnd/repositories"
 	"2026-FM247-BackEnd/router"
 	"2026-FM247-BackEnd/service"
+	"2026-FM247-BackEnd/storage"
 	"fmt"
 
 	"github.com/gin-contrib/cors"
@@ -35,6 +36,8 @@ func main() {
 		return
 	}
 
+	storage := storage.NewLocalStorage("./uploads", config.AppConfig.BaseURL+"/uploads")
+
 	fmt.Println("数据库连接成功")
 
 	//dao层初始化
@@ -44,13 +47,14 @@ func main() {
 	studyDataRepo := repository.NewStudyDataRepository(db, redisClient)
 
 	//service层初始化
-	userService := service.NewUserService(userRepo, tokenRepo)
+	userService := service.NewUserService(userRepo, tokenRepo, storage)
 	tokenService := service.NewTokenBlacklistService(tokenRepo)
 	todoService := service.NewTodoService(todoRepo)
 	studyDataService := service.NewStudyDataService(studyDataRepo)
 
 	//handler层初始化
 	authhandler := handler.NewAuthHandler(tokenService, userService, studyDataService)
+	avatarHandler := handler.NewAvatarHandler(userService)
 	todohandler := handler.NewTodoHandler(todoService)
 	studydatahandler := handler.NewStudyDataHandler(studyDataService)
 
@@ -59,6 +63,7 @@ func main() {
 	// r.Use(gin.Recovery())
 	// r.Use(middleware.GinLogger())
 	r := gin.Default()
+	r.Static("/uploads", "./uploads")
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{ // 允许的请求源
@@ -70,7 +75,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	router.RegisterRoutes(r, authhandler, todohandler, studydatahandler)
+	router.RegisterRoutes(r, authhandler, avatarHandler, todohandler, studydatahandler)
 	port := ":" + config.AppConfig.ServerPort
 	fmt.Printf("服务器正在运行，监听端口 %s\n", port)
 	if err := r.Run(port); err != nil {
