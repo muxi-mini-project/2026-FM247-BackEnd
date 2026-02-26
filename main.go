@@ -3,6 +3,7 @@ package main
 import (
 	"2026-FM247-BackEnd/config"
 	handler "2026-FM247-BackEnd/handlers"
+	"2026-FM247-BackEnd/logger"
 	repository "2026-FM247-BackEnd/repositories"
 	"2026-FM247-BackEnd/router"
 	"2026-FM247-BackEnd/service"
@@ -19,6 +20,8 @@ func main() {
 
 	fmt.Println("正在初始化配置")
 	config.LoadConfig()
+
+	logger.InitLogger("INFO")
 
 	db, err := config.ConnectDatabase()
 	if err != nil {
@@ -52,6 +55,9 @@ func main() {
 	studydatahandler := handler.NewStudyDataHandler(studyDataService)
 
 	// 启动服务器
+	// r := gin.New()
+	// r.Use(gin.Recovery())
+	// r.Use(middleware.GinLogger())
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -70,14 +76,6 @@ func main() {
 	if err := r.Run(port); err != nil {
 		fmt.Printf("服务器启动失败: %v\n", err)
 	}
-
-	r.Use(func(c *gin.Context) {
-		fmt.Println("请求头：")
-		for k, v := range c.Request.Header {
-			fmt.Printf("%s: %v\n", k, v)
-		}
-		c.Next()
-	})
 
 	fmt.Println("正在与数据库断开连接")
 	err = config.CloseDatabase(db)

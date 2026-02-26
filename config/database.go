@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 
+	"2026-FM247-BackEnd/gormlogger"
 	"2026-FM247-BackEnd/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
@@ -21,7 +23,7 @@ func ConnectDatabase() (*gorm.DB, error) {
 		AppConfig.DBName,
 	)
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: gormlogger.NewStdLogger(logger.Info)})
 	if err != nil {
 		return nil, err
 	}
