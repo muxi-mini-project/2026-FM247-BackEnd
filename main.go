@@ -36,7 +36,7 @@ func main() {
 		return
 	}
 
-	storage := storage.NewLocalStorage("./uploads", config.AppConfig.BaseURL+"/uploads")
+	storage := storage.NewLocalStorage("./uploads", config.AppConfig.BaseURL)
 
 	fmt.Println("数据库连接成功")
 

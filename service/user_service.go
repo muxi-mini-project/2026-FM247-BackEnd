@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"2026-FM247-BackEnd/models"
+	"2026-FM247-BackEnd/storage"
 	"2026-FM247-BackEnd/utils"
 )
 
@@ -26,11 +27,11 @@ type UserRepository interface {
 
 type UserService struct {
 	userRepo  UserRepository
-	storage   Storage
+	storage   storage.Storage
 	tokenRepo TokenBlacklistRepository
 }
 
-func NewUserService(userRepo UserRepository, tokenRepo TokenBlacklistRepository, storage Storage) *UserService {
+func NewUserService(userRepo UserRepository, tokenRepo TokenBlacklistRepository, storage storage.Storage) *UserService {
 	return &UserService{
 		userRepo:  userRepo,
 		storage:   storage,
