@@ -70,7 +70,7 @@ func (s *StudyDataService) GetMonthlyStudyData(userID uint, date time.Time) (Mon
 	data, err, notFound := s.repo.GetMonthlyStudyData(userID, date)
 	if notFound {
 		return MonthlyStudyDataInfo{
-			Month:     date,
+			Date:      date,
 			StudyTime: 0,
 			Tomatoes:  0,
 		}, ""
@@ -79,7 +79,7 @@ func (s *StudyDataService) GetMonthlyStudyData(userID uint, date time.Time) (Mon
 		return MonthlyStudyDataInfo{}, "查询每月学习数据失败" + err.Error()
 	}
 	return MonthlyStudyDataInfo{
-		Month:     data.Month,
+		Date:      data.Month,
 		StudyTime: data.StudyTime,
 		Tomatoes:  data.Tomatoes,
 	}, ""
@@ -157,7 +157,7 @@ func (s *StudyDataService) GetYearStudyData(userID uint, date time.Time) ([]Mont
 		data, msg := s.GetMonthlyStudyData(userID, date)
 		if msg != "" {
 			data = MonthlyStudyDataInfo{
-				Month:     date,
+				Date:      date,
 				StudyTime: 0,
 				Tomatoes:  0,
 			}

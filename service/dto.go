@@ -30,7 +30,7 @@ type DailyStudyDataInfo struct {
 
 // 每月学习数据dto
 type MonthlyStudyDataInfo struct {
-	Month     time.Time `json:"month"`
+	Date      time.Time `json:"date"`
 	StudyTime int       `json:"studytime"`
 	Tomatoes  int       `json:"tomatoes"`
 }
