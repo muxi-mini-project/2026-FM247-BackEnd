@@ -186,25 +186,17 @@ func (s *UserService) GetUserInfo(userID uint) (*UserInfo, error) {
 		return nil, err
 	}
 
-	finalAvatarURL := user.Avatar
-	if finalAvatarURL != "http://localhost:8080/uploads/default-avatar.png" {
-		// 调用 storage 接口获取完整链接
-		// 假如 user.Avatar 是 "avatars/1.jpg"
-		// 本地存储会变成 "http://localhost:8080/uploads/avatars/1.jpg"
-		// OSS 存储会变成 "https://oss-cn-xxx.../avatars/1.jpg"
-		fullURL, err := s.storage.GetURL(user.Avatar)
-		if err == nil {
-			finalAvatarURL = fullURL
-		}
+	fullURL, err := s.storage.GetURL(user.Avatar)
+	if err != nil {
+		return nil, fmt.Errorf("获取头像URL失败: %w", err)
 	}
-
 	userInfo := &UserInfo{
 		ID:         user.ID,
 		Username:   user.Username,
 		Email:      user.Email,
 		Gender:     user.Gender,
 		Telenum:    user.Telenum,
-		Avatar:     finalAvatarURL,
+		Avatar:     fullURL,
 		Experience: user.Experience,
 		Level:      user.Level,
 		CreatedAt:  user.CreatedAt,

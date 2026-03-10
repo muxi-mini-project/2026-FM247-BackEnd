@@ -51,7 +51,7 @@ func (s *LocalStorage) Upload(ctx context.Context, path string, content io.Reade
 		return "", fmt.Errorf("写入文件失败: %w", err)
 	}
 
-	// 5. 返回相对路径或完整URL（取决于你的业务需求，通常存相对路径更灵活）
+	// 5. 返回相对路径
 	return path, nil
 }
 
