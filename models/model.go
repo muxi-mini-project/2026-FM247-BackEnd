@@ -86,7 +86,6 @@ type Music struct {
 	Duration   int       `gorm:"not null" json:"duration"`                 // 音乐时长，单位为秒
 	FileURL    string    `gorm:"type:varchar(500);not null" json:"url"`    // 音乐URL
 	UploaderID uint      `json:"uploader_id"`                              // 上传者 ID, 0 表示系统音乐
-	IsSystem   bool      `gorm:"default:false" json:"is_system"`           // 是否为系统音乐
 	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`         // 创建时间
 }
 
