@@ -15,6 +15,7 @@ func RegisterRoutes(
 	studydatahandler *handler.StudyDataHandler,
 	musichandler *handler.MusicHandler,
 	ambientSoundHandler *handler.AmbientSoundHandler,
+	aiChatHandler *handler.AIChatHandler,
 ) {
 	publicGroup := r.Group("/api")
 	{
@@ -61,8 +62,16 @@ func RegisterRoutes(
 	ambientGroup.Use(middleware.AuthMiddleware(authhandler.Tokenservice))
 	{
 		ambientGroup.GET("", ambientSoundHandler.GetAllAmbientSounds)
-		ambientGroup.POST("", middleware.AuthMiddleware(authhandler.Tokenservice), ambientSoundHandler.CreateAmbientSound)
-		ambientGroup.DELETE("/:name", middleware.AuthMiddleware(authhandler.Tokenservice), ambientSoundHandler.DeleteAmbientSound)
+		ambientGroup.POST("", ambientSoundHandler.CreateAmbientSound)
+		ambientGroup.DELETE("/:name", ambientSoundHandler.DeleteAmbientSound)
+	}
+
+	// AI聊天相关
+	aiChatGroup := r.Group("/api/ai-chat")
+	aiChatGroup.Use(middleware.AuthMiddleware(authhandler.Tokenservice))
+	{
+		aiChatGroup.POST("/message", aiChatHandler.Chat)
+		aiChatGroup.GET("/history", aiChatHandler.GetChatHistory)
 	}
 
 	// 管理员特有路由

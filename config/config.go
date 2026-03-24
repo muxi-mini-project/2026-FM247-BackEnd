@@ -19,6 +19,8 @@ type Config struct {
 	JWTExpire  time.Duration
 	ServerPort string
 	BaseURL    string
+	ApiKey     string
+	AiBaseURL  string
 }
 
 var AppConfig *Config
@@ -41,6 +43,8 @@ func LoadConfig() {
 		JWTExpire:  time.Duration(jwtExpire) * time.Hour,
 		ServerPort: getEnv("SERVER_PORT", "8080"),
 		BaseURL:    getEnv("BASE_URL", "http://localhost:8080"), // 从环境变量获取，默认即本地
+		ApiKey:     getEnv("OPENAI_KEY", ""),
+		AiBaseURL:  getEnv("OPENAI_BASE_URL", "https://api.openai.com/v1"), // 从环境变量获取，默认即OpenAI官方地址
 	}
 }
 
