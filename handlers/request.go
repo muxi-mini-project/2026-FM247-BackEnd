@@ -58,3 +58,8 @@ type UploadMusicRequest struct {
 type CreateAmbientSoundRequest struct {
 	Name string `form:"name" binding:"required"`
 }
+
+// ============AI聊天请求结构体=============
+type AIChatRequest struct {
+	Content string `json:"content" binding:"required"`
+}

@@ -16,7 +16,8 @@ import (
 // Claims 结构体定义JWT的声明（payload）部分
 // 继承jwt.StandardClaims，包含了JWT标准声明如过期时间、签发时间等
 // UserID: 用户ID，用于标识用户身份
-// Username: 用户名，用于标识用户身份
+// IsAdmin: 是否为管理员，用于权限控制
+// Jti: JWT ID，唯一标识一个令牌
 type Claims struct {
 	UserID  uint   `json:"user_id"`
 	IsAdmin bool   `json:"is_admin"`

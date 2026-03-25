@@ -20,12 +20,7 @@ func NewMusicHandler(musicService *service.MusicService) *MusicHandler {
 // GetAllMusic 获取所有音乐
 // @Router /api/music [get]
 func (h *MusicHandler) GetAllMusic(c *gin.Context) {
-	// 验证登录
-	claims, err := utils.GetClaimsFromContext(c)
-	if err != nil {
-		FailWithMessage(c, "请先登录")
-		return
-	}
+	claims, _ := utils.GetClaimsFromContext(c)
 	musicInfos, err := h.musicService.GetAllMusic(claims.UserID)
 	if err != nil {
 		FailWithMessage(c, "获取音乐列表失败: "+err.Error())
@@ -79,19 +74,7 @@ func (h *MusicHandler) UploadSystemMusic(c *gin.Context) {
 		FailWithMessage(c, "请求参数错误: "+err.Error())
 		return
 	}
-
-	// 2. 验证登录和管理员权限
-	claims, err := utils.GetClaimsFromContext(c)
-	if err != nil {
-		FailWithMessage(c, "请先登录")
-		return
-	}
-	if !claims.IsAdmin {
-		FailWithMessage(c, "权限不足")
-		return
-	}
-
-	// 3. 获取上传的文件
+	// 2. 获取上传的文件
 	file, header, err := c.Request.FormFile("music")
 	if err != nil {
 		FailWithMessage(c, "请选择音乐文件")
@@ -99,7 +82,7 @@ func (h *MusicHandler) UploadSystemMusic(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// 4. 上传音乐
+	// 3. 上传音乐
 	musicURL, err := h.musicService.UploadMusic(c.Request.Context(), 0, file, header, req.Author, req.Title)
 	if err != nil {
 		FailWithMessage(c, "上传失败: "+err.Error())

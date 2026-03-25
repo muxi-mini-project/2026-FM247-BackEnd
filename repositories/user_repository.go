@@ -93,7 +93,7 @@ func (r *UserRepository) UpdatePassword(userid uint, newpassword string) error {
 }
 
 func (r *UserRepository) DeleteUser(userid uint) error {
-	error := r.db.Transaction(func(tx *gorm.DB) error {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("user_id = ?", userid).Delete(&models.DailyStudyData{}).Error; err != nil {
 			return err
 		}
@@ -117,8 +117,8 @@ func (r *UserRepository) DeleteUser(userid uint) error {
 		}
 		return nil
 	})
-	if error != nil {
-		return error
+	if err != nil {
+		return err
 	}
 	return nil
 }
