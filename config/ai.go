@@ -7,11 +7,11 @@ import (
 )
 
 func NewAIClient() (*openai.Client, error) {
-	if AppConfig.ApiKey == "" {
+	if AppConfig.APIKey == "" {
 		return nil, fmt.Errorf("OpenAI API key is not set")
 	}
-	config := openai.DefaultConfig(AppConfig.ApiKey)
-	config.BaseURL = AppConfig.AiBaseURL
+	config := openai.DefaultConfig(AppConfig.APIKey)
+	config.BaseURL = AppConfig.AIBaseURL
 	client := openai.NewClientWithConfig(config)
 	return client, nil
 }
